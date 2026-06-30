@@ -1,0 +1,68 @@
+import { useEffect, useRef, useState, useCallback } from 'react';
+import type { Session } from '../types';
+
+interface WsMessage {
+  type: 'sessions';
+  data: Session[];
+}
+
+interface UseWebSocketResult {
+  sessions: Session[];
+  connected: boolean;
+}
+
+export function useWebSocket(): UseWebSocketResult {
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef<WebSocket | null>(null);
+  const backoffRef = useRef(1000);
+  const mountedRef = useRef(true);
+
+  const connect = useCallback(() => {
+    if (!mountedRef.current) return;
+
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const url = `${protocol}//${window.location.host}/ws`;
+    const ws = new WebSocket(url);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      if (!mountedRef.current) return;
+      setConnected(true);
+      backoffRef.current = 1000;
+    };
+
+    ws.onmessage = (event) => {
+      if (!mountedRef.current) return;
+      try {
+        const msg: WsMessage = JSON.parse(event.data);
+        if (msg.type === 'sessions') setSessions(msg.data);
+      } catch {
+        // ignore malformed
+      }
+    };
+
+    ws.onclose = () => {
+      if (!mountedRef.current) return;
+      setConnected(false);
+      const delay = Math.min(backoffRef.current, 30_000);
+      backoffRef.current = Math.min(backoffRef.current * 2, 30_000);
+      setTimeout(connect, delay);
+    };
+
+    ws.onerror = () => {
+      ws.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    connect();
+    return () => {
+      mountedRef.current = false;
+      wsRef.current?.close();
+    };
+  }, [connect]);
+
+  return { sessions, connected };
+}

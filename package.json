@@ -1,0 +1,20 @@
+{
+  "name": "lobby",
+  "version": "1.0.0",
+  "description": "Media display app for Plex on TV screens",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "concurrently \"node --watch server.js\" \"cd frontend && npm run dev\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "sharp": "^0.33.2",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
