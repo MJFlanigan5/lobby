@@ -34,10 +34,21 @@ export default function Ambient() {
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    fetch('/api/library/random?limit=20')
-      .then((r) => r.json())
-      .then((d) => setItems(d.items || []))
-      .catch(() => {});
+    Promise.all([
+      fetch('/api/library/recent?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
+      fetch('/api/library/random?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
+    ]).then(([recent, random]) => {
+      // Recent items lead; random fills in anything not already present
+      const seen = new Set<string>();
+      const merged: LibraryItem[] = [];
+      for (const item of [...(recent.items || []), ...(random.items || [])]) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          merged.push(item);
+        }
+      }
+      setItems(merged);
+    });
   }, []);
 
   useEffect(() => {

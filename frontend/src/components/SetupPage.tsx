@@ -190,10 +190,12 @@ export default function SetupPage() {
     setSaving(true);
     setSaved(false);
     try {
-      // Only send non-empty values so we don't overwrite env-var secrets with blanks
+      // Send all values; skip secrets when blank so we don't overwrite stored tokens
+      const SECRETS = new Set(['PLEX_TOKEN', 'SONARR_API_KEY', 'RADARR_API_KEY']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
-        if (v) payload[k] = v;
+        if (SECRETS.has(k) && !v) continue;
+        payload[k] = v;
       }
       const res = await fetch('/api/config', {
         method: 'POST',

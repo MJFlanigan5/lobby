@@ -192,8 +192,8 @@ setInterval(async () => {
     if (thumb !== lastGoveeThumb) {
       lastGoveeThumb = thumb;
       plex.proxyImage(thumb)
-        .then(({ buffer }) => extractDominantColor(buffer))
-        .then(({ r, g, b }) => govee.setColor(r, g, b))
+        .then((result) => result ? extractDominantColor(result.buffer) : null)
+        .then((color) => color && govee.setColor(color.r, color.g, color.b))
         .catch((err) => log.error('Govee sync failed:', err.message));
     }
   }

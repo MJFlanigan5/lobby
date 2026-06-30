@@ -123,6 +123,44 @@ export class Plex {
     }
   }
 
+  async getRecentlyAdded(limit = 20) {
+    if (!this.baseUrl || !this.token) return [];
+    try {
+      const libs = await this.getLibraries();
+      const allItems = [];
+      for (const lib of libs) {
+        try {
+          const data = await this.fetch(
+            `/library/sections/${lib.key}/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=${limit}`
+          );
+          const items = data?.MediaContainer?.Metadata ?? [];
+          allItems.push(...items.map((item) => ({
+            id: item.ratingKey,
+            title: item.type === 'episode' ? item.grandparentTitle || item.title : item.title,
+            thumb: item.type === 'episode'
+              ? (item.grandparentThumb || item.thumb)
+              : item.thumb,
+            type: lib.type,
+            year: item.year,
+          })));
+        } catch {
+          // skip failed library
+        }
+      }
+      // Deduplicate by thumb — same show poster from multiple episodes = one entry
+      const seenThumbs = new Set();
+      const deduped = allItems.filter((item) => {
+        if (!item.thumb || seenThumbs.has(item.thumb)) return false;
+        seenThumbs.add(item.thumb);
+        return true;
+      });
+      return deduped.slice(0, limit);
+    } catch (err) {
+      console.error('[plex] getRecentlyAdded error:', err.message);
+      return [];
+    }
+  }
+
   async proxyImage(thumbPath) {
     if (!this.baseUrl || !this.token) return null;
     try {

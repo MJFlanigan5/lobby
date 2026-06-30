@@ -87,9 +87,32 @@ export default function ControlPanel({ currentMode }: ControlPanelProps) {
           Changes push to all connected screens instantly
         </p>
 
+        {/* Per-screen orientation — navigates this tab to the display */}
+        <div className="mt-6 border-t border-white/8 pt-6">
+          <p className="text-white/25 text-xs uppercase tracking-wider mb-3 text-center select-none">
+            This screen
+          </p>
+          <div className="flex gap-2">
+            <a
+              href="/"
+              className="flex-1 text-center py-2.5 text-xs rounded bg-white/5 text-white/50 hover:bg-white/10 transition-colors"
+            >
+              Landscape
+            </a>
+            <a
+              href="/?mode=portrait"
+              className="flex-1 text-center py-2.5 text-xs rounded bg-white/5 text-white/50 hover:bg-white/10 transition-colors"
+            >
+              Portrait
+            </a>
+          </div>
+          <p className="mt-2 text-white/15 text-xs text-center select-none">
+            Opens the display in the selected orientation
+          </p>
+        </div>
+
         <div className="mt-6 flex gap-4 justify-center text-xs text-white/20">
           <a href="/?page=setup" className="hover:text-white/40 transition-colors">Setup</a>
-          <a href="/" className="hover:text-white/40 transition-colors">Display</a>
         </div>
       </div>
     </div>
