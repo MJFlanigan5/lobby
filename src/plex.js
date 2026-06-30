@@ -37,15 +37,27 @@ export class Plex {
           ? Math.round((item.viewOffset / item.duration) * 100)
           : 0;
 
+        const isTrack = item.type === 'track';
+        const isEpisode = item.type === 'episode';
+
         return {
           id: session.id || item.sessionKey || String(Math.random()),
           type: item.type,
-          title: item.type === 'episode' ? item.grandparentTitle || item.title : item.title,
-          subtitle: item.type === 'episode' ? item.title : item.year ? String(item.year) : '',
+          title: isEpisode
+            ? (item.grandparentTitle || item.title)
+            : item.title,
+          subtitle: isEpisode
+            ? item.title
+            : isTrack
+            ? [item.grandparentTitle, item.parentTitle].filter(Boolean).join(' — ')
+            : item.year ? String(item.year) : '',
           year: item.year,
-          thumb: item.type === 'episode'
+          thumb: isEpisode
             ? (item.grandparentThumb || item.thumb)
+            : isTrack
+            ? (item.parentThumb || item.thumb)
             : item.thumb,
+          art: item.art || '',
           userThumb: user.thumb || '',
           username: user.title || 'Unknown',
           progress,

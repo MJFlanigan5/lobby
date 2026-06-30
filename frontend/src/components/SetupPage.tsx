@@ -2,16 +2,18 @@ import { useState, useEffect } from 'react';
 
 interface ConfigState {
   PLEX_URL: string;
-  PLEX_TOKEN: string;
   PLEX_TOKEN_SET: boolean;
   SONARR_URL: string;
-  SONARR_API_KEY: string;
   SONARR_API_KEY_SET: boolean;
   RADARR_URL: string;
-  RADARR_API_KEY: string;
   RADARR_API_KEY_SET: boolean;
   GOVEE_IP: string;
   GOVEE_DEVICE_ID: string;
+  LATITUDE: string;
+  LONGITUDE: string;
+  TEMP_UNIT: string;
+  SCHEDULE_COMING_SOON: string;
+  SCHEDULE_AUTO: string;
 }
 
 interface FieldProps {
@@ -64,6 +66,8 @@ export default function SetupPage() {
     SONARR_URL: '', SONARR_API_KEY: '',
     RADARR_URL: '', RADARR_API_KEY: '',
     GOVEE_IP: '', GOVEE_DEVICE_ID: '',
+    LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
+    SCHEDULE_COMING_SOON: '', SCHEDULE_AUTO: '',
   });
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
@@ -83,6 +87,11 @@ export default function SetupPage() {
           RADARR_URL: d.RADARR_URL || '',
           GOVEE_IP: d.GOVEE_IP || '',
           GOVEE_DEVICE_ID: d.GOVEE_DEVICE_ID || '',
+          LATITUDE: d.LATITUDE || '',
+          LONGITUDE: d.LONGITUDE || '',
+          TEMP_UNIT: d.TEMP_UNIT || 'fahrenheit',
+          SCHEDULE_COMING_SOON: d.SCHEDULE_COMING_SOON || '',
+          SCHEDULE_AUTO: d.SCHEDULE_AUTO || '',
         }));
       })
       .catch(() => {});
@@ -179,6 +188,51 @@ export default function SetupPage() {
           <Section title="Govee Ambient Sync (optional)">
             <Field label="Device IP" id="govee-ip" value={form.GOVEE_IP} placeholder="192.168.1.x" onChange={set('GOVEE_IP')} />
             <Field label="Device ID" id="govee-id" value={form.GOVEE_DEVICE_ID} placeholder="AA:BB:CC:DD:EE:FF:GG:HH" onChange={set('GOVEE_DEVICE_ID')} />
+          </Section>
+
+          <Section title="Weather (optional — Open-Meteo, no API key)">
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Latitude" id="lat" value={form.LATITUDE} placeholder="33.749" onChange={set('LATITUDE')} />
+              <Field label="Longitude" id="lon" value={form.LONGITUDE} placeholder="-84.388" onChange={set('LONGITUDE')} />
+            </div>
+            <div>
+              <label className="block text-xs text-white/40 uppercase tracking-wider mb-1">Temperature Unit</label>
+              <div className="flex gap-3">
+                {['fahrenheit', 'celsius'].map((u) => (
+                  <button
+                    key={u}
+                    onClick={() => set('TEMP_UNIT')(u)}
+                    className={`px-4 py-2 text-xs rounded transition-colors ${
+                      form.TEMP_UNIT === u
+                        ? 'bg-white text-black font-semibold'
+                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                  >
+                    {u === 'fahrenheit' ? '°F' : '°C'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Section>
+
+          <Section title="Auto-Schedule (optional)">
+            <Field
+              label="Switch to Coming Soon (cron)"
+              id="sched-cs"
+              value={form.SCHEDULE_COMING_SOON}
+              placeholder="0 18 * * 5  (Fridays at 6pm)"
+              onChange={set('SCHEDULE_COMING_SOON')}
+            />
+            <Field
+              label="Switch back to Auto (cron)"
+              id="sched-auto"
+              value={form.SCHEDULE_AUTO}
+              placeholder="0 6 * * 1  (Mondays at 6am)"
+              onChange={set('SCHEDULE_AUTO')}
+            />
+            <p className="text-white/20 text-xs">
+              Format: minute hour day month weekday (0=Sun, 5=Fri). Applied on next container start.
+            </p>
           </Section>
 
           <button

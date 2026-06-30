@@ -1,11 +1,17 @@
 import type { Session } from '../types';
 import SessionCard from './SessionCard';
+import MusicCard from './MusicCard';
 
 interface NowPlayingProps {
   sessions: Session[];
 }
 
 export default function NowPlaying({ sessions }: NowPlayingProps) {
+  // If every active session is a music track, use the music layout
+  if (sessions.length > 0 && sessions.every((s) => s.type === 'track')) {
+    return <MusicCard sessions={sessions} />;
+  }
+
   const count = sessions.length;
 
   if (count === 1) {

@@ -8,10 +8,12 @@ import { Plex } from './src/plex.js';
 import { GoveeSync } from './src/govee.js';
 import { extractDominantColor } from './src/colors.js';
 import { getConfig, saveConfig } from './src/config.js';
+import cron from 'node-cron';
 import sessionsRoute from './src/routes/sessions.js';
 import upcomingRoute from './src/routes/upcoming.js';
 import libraryRoute from './src/routes/library.js';
 import posterRoute from './src/routes/poster.js';
+import weatherRoute from './src/routes/weather.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +43,7 @@ app.use('/api/sessions', sessionsRoute(plex));
 app.use('/api/upcoming', upcomingRoute());
 app.use('/api/library', libraryRoute(plex));
 app.use('/api/poster', posterRoute(plex));
+app.use('/api/weather', weatherRoute());
 
 app.get('/api/health', (_req, res) => {
   const c = getConfig();
@@ -57,16 +60,20 @@ app.get('/api/mode', (_req, res) => {
   res.json({ mode: currentMode });
 });
 
-app.post('/api/mode', (req, res) => {
-  const { mode } = req.body;
-  if (!['auto', 'ambient', 'coming-soon'].includes(mode)) {
-    return res.status(400).json({ error: 'Invalid mode' });
-  }
+function broadcastMode(mode) {
   currentMode = mode;
   const payload = JSON.stringify({ type: 'mode', data: mode });
   for (const client of wss.clients) {
     if (client.readyState === 1) client.send(payload);
   }
+}
+
+app.post('/api/mode', (req, res) => {
+  const { mode } = req.body;
+  if (!['auto', 'ambient', 'coming-soon'].includes(mode)) {
+    return res.status(400).json({ error: 'Invalid mode' });
+  }
+  broadcastMode(mode);
   res.json({ ok: true, mode });
 });
 
@@ -78,7 +85,12 @@ app.get('/api/config', (_req, res) => {
     RADARR_URL: c.RADARR_URL,
     GOVEE_IP: c.GOVEE_IP,
     GOVEE_DEVICE_ID: c.GOVEE_DEVICE_ID,
-    // tokens omitted — never expose secrets over the API
+    LATITUDE: c.LATITUDE,
+    LONGITUDE: c.LONGITUDE,
+    TEMP_UNIT: c.TEMP_UNIT || 'fahrenheit',
+    SCHEDULE_COMING_SOON: c.SCHEDULE_COMING_SOON,
+    SCHEDULE_AUTO: c.SCHEDULE_AUTO,
+    // secrets: presence only
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
     SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
     RADARR_API_KEY_SET: !!c.RADARR_API_KEY,
@@ -86,7 +98,14 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.post('/api/config', async (req, res) => {
-  const ALLOWED = ['PLEX_URL', 'PLEX_TOKEN', 'SONARR_URL', 'SONARR_API_KEY', 'RADARR_URL', 'RADARR_API_KEY', 'GOVEE_IP', 'GOVEE_DEVICE_ID'];
+  const ALLOWED = [
+    'PLEX_URL', 'PLEX_TOKEN',
+    'SONARR_URL', 'SONARR_API_KEY',
+    'RADARR_URL', 'RADARR_API_KEY',
+    'GOVEE_IP', 'GOVEE_DEVICE_ID',
+    'LATITUDE', 'LONGITUDE', 'TEMP_UNIT',
+    'SCHEDULE_COMING_SOON', 'SCHEDULE_AUTO',
+  ];
   const settings = {};
   for (const k of ALLOWED) {
     if (typeof req.body[k] === 'string') settings[k] = req.body[k].trim();
@@ -166,5 +185,20 @@ setInterval(async () => {
 
 server.listen(PORT, () => {
   log.info(`Server running on port ${PORT}`);
-  log.info(`Plex: ${process.env.PLEX_URL || '(not configured)'}`);
+  log.info(`Plex: ${cfg.PLEX_URL || '(not configured)'}`);
+
+  // Set up cron schedules from config
+  const { SCHEDULE_COMING_SOON, SCHEDULE_AUTO } = getConfig();
+  if (SCHEDULE_COMING_SOON && cron.validate(SCHEDULE_COMING_SOON)) {
+    cron.schedule(SCHEDULE_COMING_SOON, () => {
+      log.info('Schedule: → coming-soon');
+      broadcastMode('coming-soon');
+    });
+  }
+  if (SCHEDULE_AUTO && cron.validate(SCHEDULE_AUTO)) {
+    cron.schedule(SCHEDULE_AUTO, () => {
+      log.info('Schedule: → auto');
+      broadcastMode('auto');
+    });
+  }
 });

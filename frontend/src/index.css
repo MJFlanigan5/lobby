@@ -67,3 +67,9 @@ html, body, #root {
 .fade-in {
   animation: fadeIn 0.3s ease-in-out forwards;
 }
+
+/* EQ bars for music mode */
+@keyframes eq-bar {
+  from { height: 20%; }
+  to   { height: 100%; }
+}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { LibraryItem } from '../types';
+import Weather from './Weather';
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
@@ -96,6 +97,11 @@ export default function Ambient() {
         >
           LOBBY
         </span>
+      </div>
+
+      {/* Weather — bottom left */}
+      <div className="absolute bottom-6 left-8 z-20">
+        <Weather />
       </div>
 
       {/* Clock — bottom right */}

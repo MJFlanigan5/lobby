@@ -5,6 +5,7 @@ export interface Session {
   subtitle: string;
   year?: number;
   thumb: string;
+  art?: string;
   userThumb: string;
   username: string;
   progress: number;
