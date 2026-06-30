@@ -3,14 +3,19 @@ import { useSessions } from './hooks/useSessions';
 import NowPlaying from './components/NowPlaying';
 import Ambient from './components/Ambient';
 import ComingSoon from './components/ComingSoon';
+import ControlPanel from './components/ControlPanel';
+import SetupPage from './components/SetupPage';
 
 export default function App() {
-  const { sessions, connected } = useSessions();
+  const { sessions, connected, serverMode } = useSessions();
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
-  const mode = params.get('mode');
-  const isPortrait = mode === 'portrait';
-  const isComingSoon = mode === 'coming-soon';
+  const urlMode = params.get('mode');
+  const urlPage = params.get('page');
+  const isPortrait = urlMode === 'portrait';
+
+  // Server-pushed mode takes priority over URL param
+  const activeMode = serverMode ?? urlMode;
 
   useEffect(() => {
     if (isPortrait) {
@@ -18,8 +23,20 @@ export default function App() {
     }
   }, [isPortrait]);
 
-  if (isComingSoon) {
+  if (urlPage === 'control') {
+    return <ControlPanel currentMode={activeMode} />;
+  }
+
+  if (urlPage === 'setup') {
+    return <SetupPage />;
+  }
+
+  if (activeMode === 'coming-soon') {
     return <ComingSoon />;
+  }
+
+  if (activeMode === 'ambient') {
+    return <Ambient />;
   }
 
   return (

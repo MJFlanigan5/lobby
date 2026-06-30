@@ -6,10 +6,11 @@ interface UseSessionsResult {
   activeSessions: Session[];
   sessionCount: number;
   connected: boolean;
+  serverMode: string | null;
 }
 
 export function useSessions(): UseSessionsResult {
-  const { sessions, connected } = useWebSocket();
+  const { sessions, serverMode, connected } = useWebSocket();
   const activeSessions = sessions.filter((s) => s.state !== 'paused');
 
   return {
@@ -17,5 +18,6 @@ export function useSessions(): UseSessionsResult {
     activeSessions,
     sessionCount: sessions.length,
     connected,
+    serverMode,
   };
 }

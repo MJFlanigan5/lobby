@@ -1,18 +1,19 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Session } from '../types';
 
-interface WsMessage {
-  type: 'sessions';
-  data: Session[];
-}
+type WsMessage =
+  | { type: 'sessions'; data: Session[] }
+  | { type: 'mode'; data: string };
 
 interface UseWebSocketResult {
   sessions: Session[];
+  serverMode: string | null;
   connected: boolean;
 }
 
 export function useWebSocket(): UseWebSocketResult {
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [serverMode, setServerMode] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const backoffRef = useRef(1000);
@@ -37,6 +38,7 @@ export function useWebSocket(): UseWebSocketResult {
       try {
         const msg: WsMessage = JSON.parse(event.data);
         if (msg.type === 'sessions') setSessions(msg.data);
+        else if (msg.type === 'mode') setServerMode(msg.data);
       } catch {
         // ignore malformed
       }
@@ -64,5 +66,5 @@ export function useWebSocket(): UseWebSocketResult {
     };
   }, [connect]);
 
-  return { sessions, connected };
+  return { sessions, serverMode, connected };
 }

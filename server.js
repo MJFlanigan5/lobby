@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import { Plex } from './src/plex.js';
 import { GoveeSync } from './src/govee.js';
 import { extractDominantColor } from './src/colors.js';
+import { getConfig, saveConfig } from './src/config.js';
 import sessionsRoute from './src/routes/sessions.js';
 import upcomingRoute from './src/routes/upcoming.js';
 import libraryRoute from './src/routes/library.js';
@@ -21,17 +22,15 @@ const log = {
 
 const PORT = process.env.PORT || 3000;
 
-if (!process.env.PLEX_URL || !process.env.PLEX_TOKEN) {
-  log.error('PLEX_URL and PLEX_TOKEN are required. Set them in your environment.');
+const cfg = getConfig();
+if (!cfg.PLEX_URL || !cfg.PLEX_TOKEN) {
+  log.info('Plex not configured — open http://<host>:3000/?page=setup to configure.');
 }
 
-const plex = new Plex({
-  plexUrl: process.env.PLEX_URL || '',
-  plexToken: process.env.PLEX_TOKEN || '',
-});
-
+const plex = new Plex({ plexUrl: cfg.PLEX_URL, plexToken: cfg.PLEX_TOKEN });
 const govee = new GoveeSync();
 let lastGoveeThumb = null;
+let currentMode = 'auto';
 
 const app = express();
 app.use(cors());
@@ -43,11 +42,71 @@ app.use('/api/upcoming', upcomingRoute());
 app.use('/api/library', libraryRoute(plex));
 app.use('/api/poster', posterRoute(plex));
 
-app.get('/api/health', async (_req, res) => {
-  const plexOk = !!(process.env.PLEX_URL && process.env.PLEX_TOKEN);
-  const sonarrOk = !!(process.env.SONARR_URL && process.env.SONARR_API_KEY);
-  const radarrOk = !!(process.env.RADARR_URL && process.env.RADARR_API_KEY);
-  res.json({ ok: true, plex: plexOk, sonarr: sonarrOk, radarr: radarrOk });
+app.get('/api/health', (_req, res) => {
+  const c = getConfig();
+  res.json({
+    ok: true,
+    plex: !!(c.PLEX_URL && c.PLEX_TOKEN),
+    sonarr: !!(c.SONARR_URL && c.SONARR_API_KEY),
+    radarr: !!(c.RADARR_URL && c.RADARR_API_KEY),
+    govee: !!(c.GOVEE_IP && c.GOVEE_DEVICE_ID),
+  });
+});
+
+app.get('/api/mode', (_req, res) => {
+  res.json({ mode: currentMode });
+});
+
+app.post('/api/mode', (req, res) => {
+  const { mode } = req.body;
+  if (!['auto', 'ambient', 'coming-soon'].includes(mode)) {
+    return res.status(400).json({ error: 'Invalid mode' });
+  }
+  currentMode = mode;
+  const payload = JSON.stringify({ type: 'mode', data: mode });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(payload);
+  }
+  res.json({ ok: true, mode });
+});
+
+app.get('/api/config', (_req, res) => {
+  const c = getConfig();
+  res.json({
+    PLEX_URL: c.PLEX_URL,
+    SONARR_URL: c.SONARR_URL,
+    RADARR_URL: c.RADARR_URL,
+    GOVEE_IP: c.GOVEE_IP,
+    GOVEE_DEVICE_ID: c.GOVEE_DEVICE_ID,
+    // tokens omitted — never expose secrets over the API
+    PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
+    SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
+    RADARR_API_KEY_SET: !!c.RADARR_API_KEY,
+  });
+});
+
+app.post('/api/config', async (req, res) => {
+  const ALLOWED = ['PLEX_URL', 'PLEX_TOKEN', 'SONARR_URL', 'SONARR_API_KEY', 'RADARR_URL', 'RADARR_API_KEY', 'GOVEE_IP', 'GOVEE_DEVICE_ID'];
+  const settings = {};
+  for (const k of ALLOWED) {
+    if (typeof req.body[k] === 'string') settings[k] = req.body[k].trim();
+  }
+  saveConfig(settings);
+  res.json({ ok: true, restart: true });
+});
+
+app.post('/api/config/test', async (req, res) => {
+  const { PLEX_URL, PLEX_TOKEN } = req.body;
+  if (!PLEX_URL || !PLEX_TOKEN) {
+    return res.status(400).json({ error: 'PLEX_URL and PLEX_TOKEN required' });
+  }
+  try {
+    const testPlex = new Plex({ plexUrl: PLEX_URL, plexToken: PLEX_TOKEN });
+    await testPlex.getSessions();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Connection failed' });
+  }
 });
 
 // Serve built frontend
@@ -71,6 +130,8 @@ async function getCurrentSessions() {
 
 wss.on('connection', async (ws) => {
   log.info('WebSocket client connected');
+
+  ws.send(JSON.stringify({ type: 'mode', data: currentMode }));
 
   const sessions = await getCurrentSessions();
   ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
