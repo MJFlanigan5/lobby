@@ -12,8 +12,74 @@ interface ConfigState {
   LATITUDE: string;
   LONGITUDE: string;
   TEMP_UNIT: string;
-  SCHEDULE_COMING_SOON: string;
-  SCHEDULE_AUTO: string;
+  SCHEDULE_CS_DAY: string;
+  SCHEDULE_CS_HOUR: string;
+  SCHEDULE_AUTO_DAY: string;
+  SCHEDULE_AUTO_HOUR: string;
+}
+
+const DAY_OPTIONS = [
+  { value: '', label: 'Disabled' },
+  { value: 'monday', label: 'Monday' },
+  { value: 'tuesday', label: 'Tuesday' },
+  { value: 'wednesday', label: 'Wednesday' },
+  { value: 'thursday', label: 'Thursday' },
+  { value: 'friday', label: 'Friday' },
+  { value: 'saturday', label: 'Saturday' },
+  { value: 'sunday', label: 'Sunday' },
+  { value: 'weekdays', label: 'Weekdays (Mon–Fri)' },
+  { value: 'weekends', label: 'Weekends (Sat–Sun)' },
+  { value: 'daily', label: 'Every day' },
+];
+
+const HOUR_OPTIONS = Array.from({ length: 24 }, (_, i) => ({
+  value: String(i),
+  label: i === 0 ? '12 AM' : i < 12 ? `${i} AM` : i === 12 ? '12 PM' : `${i - 12} PM`,
+}));
+
+const selectClass =
+  'bg-white/5 border border-white/10 text-white text-sm px-3 py-2 rounded outline-none focus:border-white/30 transition-colors cursor-pointer';
+
+function ScheduleRow({
+  label, dayKey, hourKey, form, set,
+}: {
+  label: string;
+  dayKey: string;
+  hourKey: string;
+  form: Record<string, string>;
+  set: (key: string) => (value: string) => void;
+}) {
+  const enabled = !!form[dayKey];
+  return (
+    <div>
+      <p className="text-xs text-white/40 uppercase tracking-wider mb-2">{label}</p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <select
+          value={form[dayKey]}
+          onChange={(e) => set(dayKey)(e.target.value)}
+          className={selectClass}
+        >
+          {DAY_OPTIONS.map((d) => (
+            <option key={d.value} value={d.value}>{d.label}</option>
+          ))}
+        </select>
+        {enabled && (
+          <>
+            <span className="text-white/30 text-sm">at</span>
+            <select
+              value={form[hourKey]}
+              onChange={(e) => set(hourKey)(e.target.value)}
+              className={selectClass}
+            >
+              {HOUR_OPTIONS.map((h) => (
+                <option key={h.value} value={h.value}>{h.label}</option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
 interface FieldProps {
@@ -67,7 +133,8 @@ export default function SetupPage() {
     RADARR_URL: '', RADARR_API_KEY: '',
     GOVEE_IP: '', GOVEE_DEVICE_ID: '',
     LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
-    SCHEDULE_COMING_SOON: '', SCHEDULE_AUTO: '',
+    SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
+    SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
   });
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
@@ -90,8 +157,10 @@ export default function SetupPage() {
           LATITUDE: d.LATITUDE || '',
           LONGITUDE: d.LONGITUDE || '',
           TEMP_UNIT: d.TEMP_UNIT || 'fahrenheit',
-          SCHEDULE_COMING_SOON: d.SCHEDULE_COMING_SOON || '',
-          SCHEDULE_AUTO: d.SCHEDULE_AUTO || '',
+          SCHEDULE_CS_DAY: d.SCHEDULE_CS_DAY || '',
+          SCHEDULE_CS_HOUR: d.SCHEDULE_CS_HOUR || '18',
+          SCHEDULE_AUTO_DAY: d.SCHEDULE_AUTO_DAY || '',
+          SCHEDULE_AUTO_HOUR: d.SCHEDULE_AUTO_HOUR || '6',
         }));
       })
       .catch(() => {});
@@ -216,23 +285,21 @@ export default function SetupPage() {
           </Section>
 
           <Section title="Auto-Schedule (optional)">
-            <Field
-              label="Switch to Coming Soon (cron)"
-              id="sched-cs"
-              value={form.SCHEDULE_COMING_SOON}
-              placeholder="0 18 * * 5  (Fridays at 6pm)"
-              onChange={set('SCHEDULE_COMING_SOON')}
+            <ScheduleRow
+              label="Switch to Coming Soon"
+              dayKey="SCHEDULE_CS_DAY"
+              hourKey="SCHEDULE_CS_HOUR"
+              form={form}
+              set={set}
             />
-            <Field
-              label="Switch back to Auto (cron)"
-              id="sched-auto"
-              value={form.SCHEDULE_AUTO}
-              placeholder="0 6 * * 1  (Mondays at 6am)"
-              onChange={set('SCHEDULE_AUTO')}
+            <ScheduleRow
+              label="Switch back to Auto"
+              dayKey="SCHEDULE_AUTO_DAY"
+              hourKey="SCHEDULE_AUTO_HOUR"
+              form={form}
+              set={set}
             />
-            <p className="text-white/20 text-xs">
-              Format: minute hour day month weekday (0=Sun, 5=Fri). Applied on next container start.
-            </p>
+            <p className="text-white/20 text-xs">Applied on next container start.</p>
           </Section>
 
           <button

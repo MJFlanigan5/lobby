@@ -17,6 +17,19 @@ import weatherRoute from './src/routes/weather.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const DAY_TO_DOW = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
+  weekdays: '1-5', weekends: '0,6', daily: '*',
+};
+
+function buildCron(day, hour) {
+  const dow = DAY_TO_DOW[day?.toLowerCase()];
+  const h = parseInt(hour, 10);
+  if (dow === undefined || isNaN(h) || h < 0 || h > 23) return null;
+  return `0 ${h} * * ${dow}`;
+}
+
 const log = {
   info: (...args) => console.log('[lobby]', ...args),
   error: (...args) => console.error('[lobby:error]', ...args),
@@ -88,8 +101,10 @@ app.get('/api/config', (_req, res) => {
     LATITUDE: c.LATITUDE,
     LONGITUDE: c.LONGITUDE,
     TEMP_UNIT: c.TEMP_UNIT || 'fahrenheit',
-    SCHEDULE_COMING_SOON: c.SCHEDULE_COMING_SOON,
-    SCHEDULE_AUTO: c.SCHEDULE_AUTO,
+    SCHEDULE_CS_DAY: c.SCHEDULE_CS_DAY,
+    SCHEDULE_CS_HOUR: c.SCHEDULE_CS_HOUR || '18',
+    SCHEDULE_AUTO_DAY: c.SCHEDULE_AUTO_DAY,
+    SCHEDULE_AUTO_HOUR: c.SCHEDULE_AUTO_HOUR || '6',
     // secrets: presence only
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
     SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
@@ -104,7 +119,8 @@ app.post('/api/config', async (req, res) => {
     'RADARR_URL', 'RADARR_API_KEY',
     'GOVEE_IP', 'GOVEE_DEVICE_ID',
     'LATITUDE', 'LONGITUDE', 'TEMP_UNIT',
-    'SCHEDULE_COMING_SOON', 'SCHEDULE_AUTO',
+    'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
+    'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
   ];
   const settings = {};
   for (const k of ALLOWED) {
@@ -187,18 +203,16 @@ server.listen(PORT, () => {
   log.info(`Server running on port ${PORT}`);
   log.info(`Plex: ${cfg.PLEX_URL || '(not configured)'}`);
 
-  // Set up cron schedules from config
-  const { SCHEDULE_COMING_SOON, SCHEDULE_AUTO } = getConfig();
-  if (SCHEDULE_COMING_SOON && cron.validate(SCHEDULE_COMING_SOON)) {
-    cron.schedule(SCHEDULE_COMING_SOON, () => {
-      log.info('Schedule: → coming-soon');
-      broadcastMode('coming-soon');
-    });
+  // Set up cron schedules from human-readable config
+  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR } = getConfig();
+  const csCron = buildCron(SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR);
+  const autoCron = buildCron(SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR);
+  if (csCron) {
+    cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); });
+    log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR}`);
   }
-  if (SCHEDULE_AUTO && cron.validate(SCHEDULE_AUTO)) {
-    cron.schedule(SCHEDULE_AUTO, () => {
-      log.info('Schedule: → auto');
-      broadcastMode('auto');
-    });
+  if (autoCron) {
+    cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); });
+    log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR}`);
   }
 });
