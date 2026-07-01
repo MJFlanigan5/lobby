@@ -36,27 +36,32 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const intervalMs = Math.max(3, parseInt(displayConfig?.SLIDESHOW_INTERVAL || '8', 10)) * 1000;
+  const intervalMs = Math.max(3, parseInt(displayConfig?.SLIDESHOW_INTERVAL || '20', 10)) * 1000;
   const clockFormat = displayConfig?.CLOCK_FORMAT || '12h';
   const showWeather = displayConfig?.SHOW_WEATHER !== 'false';
   const showClock = displayConfig?.SHOW_CLOCK !== 'false';
   const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/library/recent?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
-      fetch('/api/library/random?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
-    ]).then(([recent, random]) => {
-      const seen = new Set<string>();
-      const merged: LibraryItem[] = [];
-      for (const item of [...(recent.items || []), ...(random.items || [])]) {
-        if (!seen.has(item.id)) {
-          seen.add(item.id);
-          merged.push(item);
+    const load = () => {
+      Promise.all([
+        fetch('/api/library/recent?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
+        fetch('/api/library/random?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
+      ]).then(([recent, random]) => {
+        const seen = new Set<string>();
+        const merged: LibraryItem[] = [];
+        for (const item of [...(recent.items || []), ...(random.items || [])]) {
+          if (!seen.has(item.id)) {
+            seen.add(item.id);
+            merged.push(item);
+          }
         }
-      }
-      setItems(merged);
-    });
+        setItems(merged);
+      });
+    };
+    load();
+    const id = setInterval(load, 30 * 60_000);
+    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -133,6 +138,12 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         }}
       />
 
+      {/* Bottom gradient for title legibility */}
+      <div
+        className="absolute inset-x-0 bottom-0 pointer-events-none"
+        style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
+      />
+
       {/* LOBBY wordmark + nav — top left */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-4">
         <span
@@ -154,6 +165,21 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
           Control
         </a>
       </div>
+
+      {/* Title overlay */}
+      {current && (
+        <div
+          className="absolute bottom-20 left-10 right-10 z-20 pointer-events-none"
+          style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}
+        >
+          <p className="text-white text-4xl font-bold leading-tight tracking-tight drop-shadow-lg line-clamp-2">
+            {current.title}
+          </p>
+          <p className="text-white/55 text-base mt-2 tracking-widest uppercase drop-shadow font-light">
+            {[current.year ? `Released ${current.year}` : null, current.type === 'show' ? 'TV Series' : 'Movie'].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      )}
 
       {showWeather && (
         <div className="absolute bottom-6 left-8 z-20">

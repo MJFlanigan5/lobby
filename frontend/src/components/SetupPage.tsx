@@ -170,10 +170,10 @@ function GettingStarted() {
         <li className="flex gap-3">
           <span className="text-white/20 font-mono text-sm w-5 shrink-0">3.</span>
           <div>
-            <p className="text-white/70 text-sm font-medium mb-1">Save and restart the container</p>
-            <code className="block text-white/40 text-xs font-mono mt-1 bg-black/30 px-3 py-2 rounded">
-              cd /opt/lobby && docker compose restart
-            </code>
+            <p className="text-white/70 text-sm font-medium mb-1">Save — changes apply instantly</p>
+            <p className="text-white/35 text-xs leading-relaxed">
+              Hit Save below. The display will update automatically with no restart needed.
+            </p>
           </div>
         </li>
         <li className="flex gap-3">
@@ -219,7 +219,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     LOCATION: '', LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
     SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
     SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
-    SLIDESHOW_INTERVAL: '8',
+    SLIDESHOW_INTERVAL: '20',
     CLOCK_FORMAT: '12h',
     LIBRARY_FILTER: 'all',
     SHOW_WEATHER: 'true',
@@ -481,8 +481,8 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
               <div className="flex gap-2 flex-wrap">
                 {[
                   { value: '5', label: '5s' },
-                  { value: '8', label: '8s' },
-                  { value: '15', label: '15s' },
+                  { value: '10', label: '10s' },
+                  { value: '20', label: '20s' },
                   { value: '30', label: '30s' },
                   { value: '60', label: '1m' },
                 ].map((opt) => (

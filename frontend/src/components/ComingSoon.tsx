@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { UpcomingItem } from '../types';
+import type { DisplayConfig } from '../hooks/useWebSocket';
 import Ambient from './Ambient';
 
 function formatDate(dateStr?: string) {
@@ -8,7 +9,7 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-export default function ComingSoon() {
+export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayConfig }) {
   const [items, setItems] = useState<UpcomingItem[] | null>(null);
 
   const load = () => {
@@ -28,7 +29,7 @@ export default function ComingSoon() {
   if (items === null) return null;
 
   // No upcoming content — fall back to ambient display
-  if (items.length === 0) return <Ambient />;
+  if (items.length === 0) return <Ambient displayConfig={displayConfig} />;
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-auto p-8">

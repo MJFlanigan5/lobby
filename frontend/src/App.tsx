@@ -8,7 +8,7 @@ import ControlPanel from './components/ControlPanel';
 import SetupPage from './components/SetupPage';
 
 const DEFAULT_DISPLAY: DisplayConfig = {
-  SLIDESHOW_INTERVAL: '8',
+  SLIDESHOW_INTERVAL: '20',
   CLOCK_FORMAT: '12h',
   LIBRARY_FILTER: 'all',
   SHOW_WEATHER: 'true',
@@ -68,7 +68,7 @@ export default function App() {
   }
 
   if (activeMode === 'coming-soon') {
-    return <ComingSoon />;
+    return <ComingSoon displayConfig={displayConfig} />;
   }
 
   if (activeMode === 'ambient') {

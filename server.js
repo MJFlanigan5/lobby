@@ -81,7 +81,7 @@ app.get('/api/health', (_req, res) => {
     sonarr: !!(c.SONARR_URL && c.SONARR_API_KEY),
     radarr: !!(c.RADARR_URL && c.RADARR_API_KEY),
     govee: !!(c.GOVEE_IP && c.GOVEE_DEVICE_ID),
-    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
+    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '20',
     CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
@@ -97,7 +97,7 @@ app.get('/api/mode', (_req, res) => {
 function getDisplayConfig() {
   const c = getConfig();
   return {
-    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
+    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '20',
     CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
@@ -164,7 +164,7 @@ app.get('/api/config', (_req, res) => {
     SCHEDULE_CS_HOUR: c.SCHEDULE_CS_HOUR || '18',
     SCHEDULE_AUTO_DAY: c.SCHEDULE_AUTO_DAY,
     SCHEDULE_AUTO_HOUR: c.SCHEDULE_AUTO_HOUR || '6',
-    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
+    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '20',
     CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
@@ -200,7 +200,7 @@ app.post('/api/config', async (req, res) => {
   // Reinitialize everything that was set up at startup
   const newCfg = getConfig();
   plex.baseUrl = (newCfg.PLEX_URL || '').replace(/\/$/, '');
-  plex.token = newCfg.PLEX_TOKEN || '';
+  plex.token = (newCfg.PLEX_TOKEN || '').replace(/[^\x00-\x7F]/g, '');
   jellyfin.baseUrl = (newCfg.JELLYFIN_URL || '').replace(/\/$/, '');
   jellyfin.apiKey = newCfg.JELLYFIN_API_KEY || '';
   initSchedules();
