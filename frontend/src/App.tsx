@@ -1,19 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSessions } from './hooks/useSessions';
+import type { DisplayConfig } from './hooks/useWebSocket';
 import NowPlaying from './components/NowPlaying';
 import Ambient from './components/Ambient';
 import ComingSoon from './components/ComingSoon';
 import ControlPanel from './components/ControlPanel';
 import SetupPage from './components/SetupPage';
-
-interface DisplayConfig {
-  SLIDESHOW_INTERVAL: string;
-  CLOCK_FORMAT: string;
-  LIBRARY_FILTER: string;
-  SHOW_WEATHER: string;
-  SHOW_CLOCK: string;
-  DISPLAY_NAME: string;
-}
 
 const DEFAULT_DISPLAY: DisplayConfig = {
   SLIDESHOW_INTERVAL: '8',
@@ -25,9 +17,9 @@ const DEFAULT_DISPLAY: DisplayConfig = {
 };
 
 export default function App() {
-  const { sessions, connected, serverMode } = useSessions();
+  const { sessions, connected, serverMode, displayConfig: wsDisplayConfig } = useSessions();
   const [unconfigured, setUnconfigured] = useState<boolean | null>(null);
-  const [displayConfig, setDisplayConfig] = useState<DisplayConfig>(DEFAULT_DISPLAY);
+  const displayConfig = wsDisplayConfig ?? DEFAULT_DISPLAY;
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const urlMode = params.get('mode');
@@ -60,14 +52,6 @@ export default function App() {
       .then((r) => r.json())
       .then((d) => {
         setUnconfigured(!d.plex && !d.jellyfin && !d.sonarr && !d.radarr);
-        setDisplayConfig({
-          SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '8',
-          CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
-          LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
-          SHOW_WEATHER: d.SHOW_WEATHER || 'true',
-          SHOW_CLOCK: d.SHOW_CLOCK || 'true',
-          DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
-        });
       })
       .catch(() => setUnconfigured(false));
   }, [urlPage]);

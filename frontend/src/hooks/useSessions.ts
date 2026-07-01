@@ -1,4 +1,5 @@
 import { useWebSocket } from './useWebSocket';
+import type { DisplayConfig } from './useWebSocket';
 import type { Session } from '../types';
 
 interface UseSessionsResult {
@@ -7,10 +8,11 @@ interface UseSessionsResult {
   sessionCount: number;
   connected: boolean;
   serverMode: string | null;
+  displayConfig: DisplayConfig | null;
 }
 
 export function useSessions(): UseSessionsResult {
-  const { sessions, serverMode, connected } = useWebSocket();
+  const { sessions, serverMode, connected, displayConfig } = useWebSocket();
   const activeSessions = sessions.filter((s) => s.state !== 'paused');
 
   return {
@@ -19,5 +21,6 @@ export function useSessions(): UseSessionsResult {
     sessionCount: sessions.length,
     connected,
     serverMode,
+    displayConfig,
   };
 }

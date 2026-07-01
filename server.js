@@ -49,6 +49,8 @@ const jellyfin = new Jellyfin({ jellyfinUrl: cfg.JELLYFIN_URL, apiKey: cfg.JELLY
 const govee = new GoveeSync();
 let lastGoveeThumb = null;
 let currentMode = 'auto';
+let csTask = null;
+let autoTask = null;
 
 const app = express();
 app.use(cors());
@@ -91,6 +93,41 @@ app.get('/api/health', (_req, res) => {
 app.get('/api/mode', (_req, res) => {
   res.json({ mode: currentMode });
 });
+
+function getDisplayConfig() {
+  const c = getConfig();
+  return {
+    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
+    CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
+    LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
+    SHOW_WEATHER: c.SHOW_WEATHER || 'true',
+    SHOW_CLOCK: c.SHOW_CLOCK || 'true',
+    DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
+  };
+}
+
+function broadcastDisplayConfig() {
+  const payload = JSON.stringify({ type: 'config', data: getDisplayConfig() });
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(payload);
+  }
+}
+
+function initSchedules() {
+  if (csTask) { csTask.stop(); csTask = null; }
+  if (autoTask) { autoTask.stop(); autoTask = null; }
+  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR } = getConfig();
+  const csCron = buildCron(SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR);
+  const autoCron = buildCron(SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR);
+  if (csCron) {
+    csTask = cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); });
+    log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR}`);
+  }
+  if (autoCron) {
+    autoTask = cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); });
+    log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR}`);
+  }
+}
 
 function broadcastMode(mode) {
   currentMode = mode;
@@ -159,12 +196,14 @@ app.post('/api/config', async (req, res) => {
   }
   saveConfig(settings);
 
-  // Reinitialize media server instances so credential changes apply immediately
+  // Reinitialize everything that was set up at startup
   const newCfg = getConfig();
   plex.baseUrl = (newCfg.PLEX_URL || '').replace(/\/$/, '');
   plex.token = newCfg.PLEX_TOKEN || '';
   jellyfin.baseUrl = (newCfg.JELLYFIN_URL || '').replace(/\/$/, '');
   jellyfin.apiKey = newCfg.JELLYFIN_API_KEY || '';
+  initSchedules();
+  broadcastDisplayConfig();
 
   res.json({ ok: true });
 });
@@ -221,6 +260,7 @@ wss.on('connection', async (ws) => {
   log.info('WebSocket client connected');
 
   ws.send(JSON.stringify({ type: 'mode', data: currentMode }));
+  ws.send(JSON.stringify({ type: 'config', data: getDisplayConfig() }));
 
   const sessions = await getCurrentSessions();
   ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
@@ -256,17 +296,5 @@ setInterval(async () => {
 server.listen(PORT, () => {
   log.info(`Server running on port ${PORT}`);
   log.info(`Plex: ${cfg.PLEX_URL || '(not configured)'}`);
-
-  // Set up cron schedules from human-readable config
-  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR } = getConfig();
-  const csCron = buildCron(SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR);
-  const autoCron = buildCron(SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR);
-  if (csCron) {
-    cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); });
-    log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR}`);
-  }
-  if (autoCron) {
-    cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); });
-    log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR}`);
-  }
+  initSchedules();
 });

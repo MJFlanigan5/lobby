@@ -1,20 +1,32 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Session } from '../types';
 
+export interface DisplayConfig {
+  SLIDESHOW_INTERVAL: string;
+  CLOCK_FORMAT: string;
+  LIBRARY_FILTER: string;
+  SHOW_WEATHER: string;
+  SHOW_CLOCK: string;
+  DISPLAY_NAME: string;
+}
+
 type WsMessage =
   | { type: 'sessions'; data: Session[] }
-  | { type: 'mode'; data: string };
+  | { type: 'mode'; data: string }
+  | { type: 'config'; data: DisplayConfig };
 
 interface UseWebSocketResult {
   sessions: Session[];
   serverMode: string | null;
   connected: boolean;
+  displayConfig: DisplayConfig | null;
 }
 
 export function useWebSocket(): UseWebSocketResult {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [serverMode, setServerMode] = useState<string | null>(null);
   const [connected, setConnected] = useState(false);
+  const [displayConfig, setDisplayConfig] = useState<DisplayConfig | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const backoffRef = useRef(1000);
   const mountedRef = useRef(true);
@@ -39,6 +51,7 @@ export function useWebSocket(): UseWebSocketResult {
         const msg: WsMessage = JSON.parse(event.data);
         if (msg.type === 'sessions') setSessions(msg.data);
         else if (msg.type === 'mode') setServerMode(msg.data);
+        else if (msg.type === 'config') setDisplayConfig(msg.data);
       } catch {
         // ignore malformed
       }
@@ -66,5 +79,5 @@ export function useWebSocket(): UseWebSocketResult {
     };
   }, [connect]);
 
-  return { sessions, serverMode, connected };
+  return { sessions, serverMode, connected, displayConfig };
 }

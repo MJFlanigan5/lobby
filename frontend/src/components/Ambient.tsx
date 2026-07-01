@@ -1,15 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { LibraryItem } from '../types';
+import type { DisplayConfig } from '../hooks/useWebSocket';
 import Weather from './Weather';
-
-interface DisplayConfig {
-  SLIDESHOW_INTERVAL: string;
-  CLOCK_FORMAT: string;
-  LIBRARY_FILTER: string;
-  SHOW_WEATHER: string;
-  SHOW_CLOCK: string;
-  DISPLAY_NAME: string;
-}
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
