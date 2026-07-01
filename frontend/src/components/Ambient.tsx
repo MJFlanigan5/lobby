@@ -78,11 +78,19 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
 
   const current = items[index];
   const src = current ? posterUrl(current.thumb) : '';
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+
+  useEffect(() => {
+    if (items.length > 0) return;
+    const t = setTimeout(() => setLoadTimedOut(true), 8000);
+    return () => clearTimeout(t);
+  }, [items.length]);
+
   const loading = items.length === 0;
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a]">
-      {loading && (
+      {loading && !loadTimedOut && (
         <div
           className="absolute inset-0"
           style={{
@@ -91,6 +99,12 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
             animation: 'gradientShift 4s ease infinite',
           }}
         />
+      )}
+      {loading && loadTimedOut && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+          <p className="text-white/20 text-sm tracking-widest uppercase">No library content</p>
+          <p className="text-white/10 text-xs">Configure Plex or Jellyfin in <a href="/?page=setup" className="text-white/25 hover:text-white/50 underline">Setup</a></p>
+        </div>
       )}
       {src && (
         <div

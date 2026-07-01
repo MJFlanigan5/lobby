@@ -48,7 +48,7 @@ const plex = new Plex({ plexUrl: cfg.PLEX_URL, plexToken: cfg.PLEX_TOKEN });
 const jellyfin = new Jellyfin({ jellyfinUrl: cfg.JELLYFIN_URL, apiKey: cfg.JELLYFIN_API_KEY });
 const govee = new GoveeSync();
 let lastGoveeThumb = null;
-let currentMode = 'auto';
+let currentMode = getConfig().CURRENT_MODE || 'auto';
 let csTask = null;
 let autoTask = null;
 
@@ -131,6 +131,7 @@ function initSchedules() {
 
 function broadcastMode(mode) {
   currentMode = mode;
+  saveConfig({ CURRENT_MODE: mode });
   const payload = JSON.stringify({ type: 'mode', data: mode });
   for (const client of wss.clients) {
     if (client.readyState === 1) client.send(payload);
