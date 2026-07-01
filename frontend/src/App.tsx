@@ -24,6 +24,12 @@ export default function App() {
     }
   }, [isPortrait]);
 
+  useEffect(() => {
+    const scrollable = urlPage === 'setup' || urlPage === 'control';
+    document.body.classList.toggle('scrollable', scrollable);
+    return () => document.body.classList.remove('scrollable');
+  }, [urlPage]);
+
   // On first load, check if anything is configured — redirect to setup if not
   useEffect(() => {
     if (urlPage) return; // already on a named page, don't redirect

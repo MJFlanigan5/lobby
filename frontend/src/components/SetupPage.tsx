@@ -285,15 +285,21 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   return (
     <div className="min-h-screen bg-[#0a0a0a] py-12 px-6">
       <div className="max-w-lg mx-auto">
-        <div className="mb-8">
-          <h1 className="text-white/40 text-xs font-bold tracking-[0.4em] uppercase mb-1 select-none">
-            {firstRun ? 'WELCOME TO LOBBY' : 'LOBBY SETUP'}
-          </h1>
-          <p className="text-white/20 text-xs">
-            {firstRun
-              ? 'Nothing is configured yet. Follow the steps below to get started.'
-              : 'Configure services. Tokens set via env vars are active but not shown here.'}
-          </p>
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-white/40 text-xs font-bold tracking-[0.4em] uppercase mb-1 select-none">
+              {firstRun ? 'WELCOME TO LOBBY' : 'LOBBY SETUP'}
+            </h1>
+            <p className="text-white/20 text-xs">
+              {firstRun
+                ? 'Nothing is configured yet. Follow the steps below to get started.'
+                : 'Configure services. Tokens set via env vars are active but not shown here.'}
+            </p>
+          </div>
+          <div className="flex gap-3 text-xs text-white/25 shrink-0 ml-4 mt-0.5">
+            <a href="/" className="hover:text-white/50 transition-colors">Display</a>
+            <a href="/?page=control" className="hover:text-white/50 transition-colors">Control</a>
+          </div>
         </div>
 
         {firstRun && <GettingStarted />}
@@ -421,10 +427,6 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           )}
         </div>
 
-        <div className="mt-8 flex gap-4 justify-center text-xs text-white/20">
-          <a href="/?page=control" className="hover:text-white/40 transition-colors">Control</a>
-          <a href="/" className="hover:text-white/40 transition-colors">Display</a>
-        </div>
       </div>
     </div>
   );
