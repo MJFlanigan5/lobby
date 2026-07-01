@@ -8,6 +8,7 @@ const CONFIG_PATH = path.join(CONFIG_DIR, 'settings.json');
 
 const KEYS = [
   'PLEX_URL', 'PLEX_TOKEN',
+  'JELLYFIN_URL', 'JELLYFIN_API_KEY',
   'SONARR_URL', 'SONARR_API_KEY',
   'RADARR_URL', 'RADARR_API_KEY',
   'GOVEE_IP', 'GOVEE_DEVICE_ID',

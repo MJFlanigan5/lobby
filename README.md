@@ -1,10 +1,10 @@
 # Lobby
 
-A cinematic media display app for TV screens. Shows what's currently playing on Plex, cycles through your library as an ambient screensaver, and displays upcoming releases from Sonarr and Radarr. Runs in Docker and is accessed via a browser URL on any screen — including Android TV.
+A cinematic media display app for TV screens. Shows what's currently playing on Plex or Jellyfin, cycles through your library as an ambient screensaver, and displays upcoming releases from Sonarr and Radarr. Runs in Docker and is accessed via a browser URL on any screen — including Android TV.
 
 ## Features
 
-- **Now Playing** — Real-time Plex session display. Up to 4 simultaneous viewers with widescreen backdrop art and a poster inset. Music sessions get a dedicated layout with album art and animated EQ bars.
+- **Now Playing** — Real-time Plex and Jellyfin session display. Up to 4 simultaneous viewers with widescreen backdrop art and a poster inset. Music sessions get a dedicated layout with album art and animated EQ bars.
 - **Ambient** — Full-screen poster screensaver with Ken Burns zoom. Cycles through recently added items first, then random library picks. Shows clock and weather.
 - **Coming Soon** — Upcoming releases pulled from Sonarr and Radarr calendars.
 - **Govee sync** — Extracts the dominant color from the active poster and pushes it to a Govee light via LAN UDP.
@@ -21,7 +21,7 @@ Run once on the server:
 git clone https://github.com/MJFlanigan5/lobby /opt/lobby && mkdir -p /opt/lobby/config && cd /opt/lobby && docker compose up --build -d
 ```
 
-Then open `http://<server-ip>:3000/?page=setup` to enter your Plex token and any optional services.
+Then open `http://<server-ip>:3000/` — Lobby detects an unconfigured install and shows the setup guide automatically. Or go directly to `http://<server-ip>:3000/?page=setup` any time.
 
 ## Update
 
@@ -46,6 +46,8 @@ All settings are configurable via the setup page at `/?page=setup` and saved to 
 |---|---|
 | `PLEX_URL` | Plex server URL, e.g. `http://192.168.1.x:32400` |
 | `PLEX_TOKEN` | Your Plex auth token |
+| `JELLYFIN_URL` | Jellyfin server URL, e.g. `http://192.168.1.x:8096` (optional) |
+| `JELLYFIN_API_KEY` | Jellyfin API key — Dashboard → API Keys (optional) |
 | `SONARR_URL` | Sonarr server URL (optional) |
 | `SONARR_API_KEY` | Sonarr API key — Settings → General (optional) |
 | `RADARR_URL` | Radarr server URL (optional) |
@@ -68,6 +70,13 @@ All settings are configurable via the setup page at `/?page=setup` and saved to 
 4. Look for `X-Plex-Token` in any request URL or header
 
 Or visit [plex.tv/claim](https://www.plex.tv/claim/) and follow the token instructions.
+
+## Finding your Jellyfin API key
+
+1. Open the Jellyfin Dashboard
+2. Go to Administration → API Keys
+3. Click the + button to create a new key
+4. Copy the key and paste it into the Lobby setup page
 
 ## Stack
 

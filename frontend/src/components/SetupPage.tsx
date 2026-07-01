@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 interface ConfigState {
   PLEX_URL: string;
   PLEX_TOKEN_SET: boolean;
+  JELLYFIN_URL: string;
+  JELLYFIN_API_KEY_SET: boolean;
   SONARR_URL: string;
   SONARR_API_KEY_SET: boolean;
   RADARR_URL: string;
@@ -126,9 +128,61 @@ function StatusDot({ ok }: { ok: boolean }) {
   );
 }
 
-export default function SetupPage() {
+function GettingStarted() {
+  return (
+    <div className="border border-white/10 rounded p-5 mb-4 bg-white/3">
+      <h2 className="text-white/70 text-xs font-bold tracking-[0.3em] uppercase mb-4">Getting Started</h2>
+      <ol className="flex flex-col gap-4">
+        <li className="flex gap-3">
+          <span className="text-white/20 font-mono text-sm w-5 shrink-0">1.</span>
+          <div>
+            <p className="text-white/70 text-sm font-medium mb-1">Get your Plex token</p>
+            <p className="text-white/35 text-xs leading-relaxed">
+              Open Plex Web and play anything. Open browser DevTools → Network tab and filter
+              for requests to your server. Find <code className="text-white/50">X-Plex-Token</code> in
+              any request URL.
+            </p>
+          </div>
+        </li>
+        <li className="flex gap-3">
+          <span className="text-white/20 font-mono text-sm w-5 shrink-0">2.</span>
+          <div>
+            <p className="text-white/70 text-sm font-medium mb-1">Enter your server URL and token below</p>
+            <p className="text-white/35 text-xs leading-relaxed">
+              Use the local IP address of your Plex server, e.g.{' '}
+              <code className="text-white/50">http://192.168.1.x:32400</code>.
+              Jellyfin, Sonarr, and Radarr are optional.
+            </p>
+          </div>
+        </li>
+        <li className="flex gap-3">
+          <span className="text-white/20 font-mono text-sm w-5 shrink-0">3.</span>
+          <div>
+            <p className="text-white/70 text-sm font-medium mb-1">Save and restart the container</p>
+            <code className="block text-white/40 text-xs font-mono mt-1 bg-black/30 px-3 py-2 rounded">
+              cd /opt/lobby && docker compose restart
+            </code>
+          </div>
+        </li>
+        <li className="flex gap-3">
+          <span className="text-white/20 font-mono text-sm w-5 shrink-0">4.</span>
+          <div>
+            <p className="text-white/70 text-sm font-medium mb-1">Open the display on your TV</p>
+            <p className="text-white/35 text-xs leading-relaxed">
+              Navigate to <code className="text-white/50">http://&lt;this-server-ip&gt;:3000/</code> in
+              your TV browser. Set it as the home page or add it as a shortcut.
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  );
+}
+
+export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) {
   const [form, setForm] = useState({
     PLEX_URL: '', PLEX_TOKEN: '',
+    JELLYFIN_URL: '', JELLYFIN_API_KEY: '',
     SONARR_URL: '', SONARR_API_KEY: '',
     RADARR_URL: '', RADARR_API_KEY: '',
     GOVEE_IP: '', GOVEE_DEVICE_ID: '',
@@ -139,6 +193,8 @@ export default function SetupPage() {
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingJF, setTestingJF] = useState(false);
+  const [testResultJF, setTestResultJF] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -150,6 +206,7 @@ export default function SetupPage() {
         setForm((f) => ({
           ...f,
           PLEX_URL: d.PLEX_URL || '',
+          JELLYFIN_URL: d.JELLYFIN_URL || '',
           SONARR_URL: d.SONARR_URL || '',
           RADARR_URL: d.RADARR_URL || '',
           GOVEE_IP: d.GOVEE_IP || '',
@@ -186,12 +243,30 @@ export default function SetupPage() {
     }
   };
 
+  const testJellyfin = async () => {
+    setTestingJF(true);
+    setTestResultJF(null);
+    try {
+      const res = await fetch('/api/config/test/jellyfin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ JELLYFIN_URL: form.JELLYFIN_URL, JELLYFIN_API_KEY: form.JELLYFIN_API_KEY }),
+      });
+      const d = await res.json();
+      setTestResultJF({ ok: res.ok, message: res.ok ? 'Jellyfin connected successfully' : (d.error || 'Connection failed') });
+    } catch {
+      setTestResultJF({ ok: false, message: 'Request failed' });
+    } finally {
+      setTestingJF(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setSaved(false);
     try {
       // Send all values; skip secrets when blank so we don't overwrite stored tokens
-      const SECRETS = new Set(['PLEX_TOKEN', 'SONARR_API_KEY', 'RADARR_API_KEY']);
+      const SECRETS = new Set(['PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
         if (SECRETS.has(k) && !v) continue;
@@ -212,16 +287,21 @@ export default function SetupPage() {
       <div className="max-w-lg mx-auto">
         <div className="mb-8">
           <h1 className="text-white/40 text-xs font-bold tracking-[0.4em] uppercase mb-1 select-none">
-            LOBBY SETUP
+            {firstRun ? 'WELCOME TO LOBBY' : 'LOBBY SETUP'}
           </h1>
           <p className="text-white/20 text-xs">
-            Configure services. Tokens set via env vars are active but not shown here.
+            {firstRun
+              ? 'Nothing is configured yet. Follow the steps below to get started.'
+              : 'Configure services. Tokens set via env vars are active but not shown here.'}
           </p>
         </div>
 
+        {firstRun && <GettingStarted />}
+
         {/* Status row */}
-        <div className="flex gap-4 mb-6 text-xs text-white/40">
+        <div className="flex gap-4 mb-6 text-xs text-white/40 flex-wrap">
           <span><StatusDot ok={!!status.PLEX_TOKEN_SET} />Plex</span>
+          <span><StatusDot ok={!!status.JELLYFIN_API_KEY_SET} />Jellyfin</span>
           <span><StatusDot ok={!!status.SONARR_API_KEY_SET} />Sonarr</span>
           <span><StatusDot ok={!!status.RADARR_API_KEY_SET} />Radarr</span>
         </div>
@@ -241,6 +321,25 @@ export default function SetupPage() {
               {testResult && (
                 <span className={`text-xs ${testResult.ok ? 'text-green-400' : 'text-red-400'}`}>
                   {testResult.message}
+                </span>
+              )}
+            </div>
+          </Section>
+
+          <Section title="Jellyfin (optional)">
+            <Field label="Server URL" id="jf-url" value={form.JELLYFIN_URL} placeholder="http://192.168.1.x:8096" onChange={set('JELLYFIN_URL')} />
+            <Field label={status.JELLYFIN_API_KEY_SET ? 'API Key (set — leave blank to keep)' : 'API Key'} id="jf-key" type="password" value={form.JELLYFIN_API_KEY} placeholder={status.JELLYFIN_API_KEY_SET ? '••••••••' : 'Dashboard → API Keys'} onChange={set('JELLYFIN_API_KEY')} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={testJellyfin}
+                disabled={testingJF || !form.JELLYFIN_URL}
+                className="text-xs px-3 py-1.5 bg-white/8 text-white/60 hover:bg-white/12 hover:text-white/80 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {testingJF ? 'Testing...' : 'Test connection'}
+              </button>
+              {testResultJF && (
+                <span className={`text-xs ${testResultJF.ok ? 'text-green-400' : 'text-red-400'}`}>
+                  {testResultJF.message}
                 </span>
               )}
             </div>

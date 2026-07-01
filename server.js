@@ -5,6 +5,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Plex } from './src/plex.js';
+import { Jellyfin } from './src/jellyfin.js';
 import { GoveeSync } from './src/govee.js';
 import { extractDominantColor } from './src/colors.js';
 import { getConfig, saveConfig } from './src/config.js';
@@ -13,6 +14,7 @@ import sessionsRoute from './src/routes/sessions.js';
 import upcomingRoute from './src/routes/upcoming.js';
 import libraryRoute from './src/routes/library.js';
 import posterRoute from './src/routes/poster.js';
+import jellyfinImageRoute from './src/routes/jellyfinImage.js';
 import weatherRoute from './src/routes/weather.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +45,7 @@ if (!cfg.PLEX_URL || !cfg.PLEX_TOKEN) {
 }
 
 const plex = new Plex({ plexUrl: cfg.PLEX_URL, plexToken: cfg.PLEX_TOKEN });
+const jellyfin = new Jellyfin({ jellyfinUrl: cfg.JELLYFIN_URL, apiKey: cfg.JELLYFIN_API_KEY });
 const govee = new GoveeSync();
 let lastGoveeThumb = null;
 let currentMode = 'auto';
@@ -54,8 +57,9 @@ app.use(express.json());
 // API routes
 app.use('/api/sessions', sessionsRoute(plex));
 app.use('/api/upcoming', upcomingRoute());
-app.use('/api/library', libraryRoute(plex));
+app.use('/api/library', libraryRoute(plex, jellyfin));
 app.use('/api/poster', posterRoute(plex));
+app.use('/api/jfimage', jellyfinImageRoute(jellyfin));
 app.use('/api/weather', weatherRoute());
 
 app.get('/api/health', (_req, res) => {
@@ -94,6 +98,7 @@ app.get('/api/config', (_req, res) => {
   const c = getConfig();
   res.json({
     PLEX_URL: c.PLEX_URL,
+    JELLYFIN_URL: c.JELLYFIN_URL,
     SONARR_URL: c.SONARR_URL,
     RADARR_URL: c.RADARR_URL,
     GOVEE_IP: c.GOVEE_IP,
@@ -107,6 +112,7 @@ app.get('/api/config', (_req, res) => {
     SCHEDULE_AUTO_HOUR: c.SCHEDULE_AUTO_HOUR || '6',
     // secrets: presence only
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
+    JELLYFIN_API_KEY_SET: !!c.JELLYFIN_API_KEY,
     SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
     RADARR_API_KEY_SET: !!c.RADARR_API_KEY,
   });
@@ -115,6 +121,7 @@ app.get('/api/config', (_req, res) => {
 app.post('/api/config', async (req, res) => {
   const ALLOWED = [
     'PLEX_URL', 'PLEX_TOKEN',
+    'JELLYFIN_URL', 'JELLYFIN_API_KEY',
     'SONARR_URL', 'SONARR_API_KEY',
     'RADARR_URL', 'RADARR_API_KEY',
     'GOVEE_IP', 'GOVEE_DEVICE_ID',
@@ -144,6 +151,20 @@ app.post('/api/config/test', async (req, res) => {
   }
 });
 
+app.post('/api/config/test/jellyfin', async (req, res) => {
+  const { JELLYFIN_URL, JELLYFIN_API_KEY } = req.body;
+  if (!JELLYFIN_URL || !JELLYFIN_API_KEY) {
+    return res.status(400).json({ error: 'JELLYFIN_URL and JELLYFIN_API_KEY required' });
+  }
+  try {
+    const testJF = new Jellyfin({ jellyfinUrl: JELLYFIN_URL, apiKey: JELLYFIN_API_KEY });
+    await testJF.getSessions();
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Connection failed' });
+  }
+});
+
 // Serve built frontend
 const distPath = path.join(__dirname, 'frontend', 'dist');
 app.use(express.static(distPath));
@@ -156,11 +177,20 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
 async function getCurrentSessions() {
-  try {
-    return await plex.getSessions();
-  } catch {
-    return [];
+  const [plexSessions, jfSessions] = await Promise.all([
+    plex.getSessions().catch(() => []),
+    jellyfin.getSessions().catch(() => []),
+  ]);
+  return [...plexSessions, ...jfSessions];
+}
+
+function resolveThumbImage(thumb) {
+  if (!thumb) return Promise.resolve(null);
+  if (thumb.startsWith('/api/jfimage')) {
+    const params = new URLSearchParams(thumb.split('?')[1]);
+    return jellyfin.proxyImage(params.get('id'), params.get('type') || 'Primary');
   }
+  return plex.proxyImage(thumb);
 }
 
 wss.on('connection', async (ws) => {
@@ -191,7 +221,7 @@ setInterval(async () => {
     const thumb = sessions[0].thumb;
     if (thumb !== lastGoveeThumb) {
       lastGoveeThumb = thumb;
-      plex.proxyImage(thumb)
+      resolveThumbImage(thumb)
         .then((result) => result ? extractDominantColor(result.buffer) : null)
         .then((color) => color && govee.setColor(color.r, color.g, color.b))
         .catch((err) => log.error('Govee sync failed:', err.message));

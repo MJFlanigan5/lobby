@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSessions } from './hooks/useSessions';
 import NowPlaying from './components/NowPlaying';
 import Ambient from './components/Ambient';
@@ -8,6 +8,7 @@ import SetupPage from './components/SetupPage';
 
 export default function App() {
   const { sessions, connected, serverMode } = useSessions();
+  const [unconfigured, setUnconfigured] = useState(false);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const urlMode = params.get('mode');
@@ -23,12 +24,23 @@ export default function App() {
     }
   }, [isPortrait]);
 
+  // On first load, check if anything is configured — redirect to setup if not
+  useEffect(() => {
+    if (urlPage) return; // already on a named page, don't redirect
+    fetch('/api/health')
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.plex && !d.sonarr && !d.radarr) setUnconfigured(true);
+      })
+      .catch(() => {});
+  }, [urlPage]);
+
   if (urlPage === 'control') {
     return <ControlPanel currentMode={activeMode} />;
   }
 
-  if (urlPage === 'setup') {
-    return <SetupPage />;
+  if (urlPage === 'setup' || unconfigured) {
+    return <SetupPage firstRun={unconfigured && urlPage !== 'setup'} />;
   }
 
   if (activeMode === 'coming-soon') {
