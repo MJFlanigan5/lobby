@@ -3,6 +3,7 @@ import { getConfig } from '../config.js';
 
 let cache = null;
 let cacheExpiry = 0;
+let cacheKey = '';
 
 export default function weatherRoute() {
   const router = Router();
@@ -14,7 +15,8 @@ export default function weatherRoute() {
     }
 
     const now = Date.now();
-    if (cache && now < cacheExpiry) {
+    const key = `${LATITUDE},${LONGITUDE},${TEMP_UNIT}`;
+    if (cache && now < cacheExpiry && cacheKey === key) {
       return res.json(cache);
     }
 
@@ -38,6 +40,7 @@ export default function weatherRoute() {
 
       cache = result;
       cacheExpiry = now + 10 * 60_000;
+      cacheKey = key;
       res.json(result);
     } catch (e) {
       if (cache) return res.json(cache); // serve stale on error

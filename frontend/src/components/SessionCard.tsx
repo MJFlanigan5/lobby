@@ -9,6 +9,7 @@ interface SessionCardProps {
 
 function plexUrl(path: string) {
   if (!path) return '';
+  if (path.startsWith('/api/')) return path; // Jellyfin paths are already routable
   return `/api/poster?path=${encodeURIComponent(path)}`;
 }
 

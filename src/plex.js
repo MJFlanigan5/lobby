@@ -1,7 +1,7 @@
 export class Plex {
   constructor({ plexUrl, plexToken }) {
-    this.baseUrl = plexUrl.replace(/\/$/, '');
-    this.token = plexToken;
+    this.baseUrl = (plexUrl || '').replace(/\/$/, '');
+    this.token = plexToken || '';
   }
 
   get headers() {

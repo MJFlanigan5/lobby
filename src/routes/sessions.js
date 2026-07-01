@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-export default function sessionsRoute(plex) {
+export default function sessionsRoute(getSessions) {
   const router = Router();
 
   router.get('/', async (_req, res) => {
-    const sessions = await plex.getSessions();
+    const sessions = await getSessions();
     res.json({
       sessions,
       count: sessions.length,

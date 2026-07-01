@@ -1,6 +1,7 @@
+import { getConfig } from './config.js';
+
 export async function getSonarrUpcoming() {
-  const url = process.env.SONARR_URL;
-  const key = process.env.SONARR_API_KEY;
+  const { SONARR_URL: url, SONARR_API_KEY: key } = getConfig();
   if (!url || !key) return [];
 
   try {

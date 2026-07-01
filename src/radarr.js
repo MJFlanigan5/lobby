@@ -1,6 +1,7 @@
+import { getConfig } from './config.js';
+
 export async function getRadarrUpcoming() {
-  const url = process.env.RADARR_URL;
-  const key = process.env.RADARR_API_KEY;
+  const { RADARR_URL: url, RADARR_API_KEY: key } = getConfig();
   if (!url || !key) return [];
 
   try {

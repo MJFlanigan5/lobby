@@ -73,18 +73,13 @@ export class Jellyfin {
         `/Items?Recursive=true&IncludeItemTypes=Movie,Series` +
         `&Fields=PrimaryImageAspectRatio&Limit=200&SortBy=Random`
       );
-      const items = (data.Items || []).map((item) => ({
+      return (data.Items || []).slice(0, limit).map((item) => ({
         id: `jf-${item.Id}`,
         title: item.Name,
         thumb: `/api/jfimage?id=${item.Id}&type=Primary`,
         type: item.Type === 'Movie' ? 'movie' : 'show',
         year: item.ProductionYear,
       }));
-      for (let i = items.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [items[i], items[j]] = [items[j], items[i]];
-      }
-      return items.slice(0, limit);
     } catch (err) {
       console.error('[jellyfin] getLibraryItems error:', err.message);
       return [];

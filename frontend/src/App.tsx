@@ -8,7 +8,7 @@ import SetupPage from './components/SetupPage';
 
 export default function App() {
   const { sessions, connected, serverMode } = useSessions();
-  const [unconfigured, setUnconfigured] = useState(false);
+  const [unconfigured, setUnconfigured] = useState<boolean | null>(null);
 
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
   const urlMode = params.get('mode');
@@ -30,17 +30,20 @@ export default function App() {
     fetch('/api/health')
       .then((r) => r.json())
       .then((d) => {
-        if (!d.plex && !d.sonarr && !d.radarr) setUnconfigured(true);
+        setUnconfigured(!d.plex && !d.sonarr && !d.radarr);
       })
-      .catch(() => {});
+      .catch(() => setUnconfigured(false));
   }, [urlPage]);
 
   if (urlPage === 'control') {
     return <ControlPanel currentMode={activeMode} />;
   }
 
+  // Hold render until health check resolves (prevents flicker to main display on first run)
+  if (unconfigured === null && !urlPage) return null;
+
   if (urlPage === 'setup' || unconfigured) {
-    return <SetupPage firstRun={unconfigured && urlPage !== 'setup'} />;
+    return <SetupPage firstRun={!!unconfigured && urlPage !== 'setup'} />;
   }
 
   if (activeMode === 'coming-soon') {

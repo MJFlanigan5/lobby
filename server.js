@@ -54,8 +54,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+async function getCurrentSessions() {
+  const [plexSessions, jfSessions] = await Promise.all([
+    plex.getSessions().catch(() => []),
+    jellyfin.getSessions().catch(() => []),
+  ]);
+  return [...plexSessions, ...jfSessions];
+}
+
 // API routes
-app.use('/api/sessions', sessionsRoute(plex));
+app.use('/api/sessions', sessionsRoute(getCurrentSessions));
 app.use('/api/upcoming', upcomingRoute());
 app.use('/api/library', libraryRoute(plex, jellyfin));
 app.use('/api/poster', posterRoute(plex));
@@ -175,14 +183,6 @@ app.get('*', (_req, res) => {
 // HTTP + WebSocket server
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
-
-async function getCurrentSessions() {
-  const [plexSessions, jfSessions] = await Promise.all([
-    plex.getSessions().catch(() => []),
-    jellyfin.getSessions().catch(() => []),
-  ]);
-  return [...plexSessions, ...jfSessions];
-}
 
 function resolveThumbImage(thumb) {
   if (!thumb) return Promise.resolve(null);

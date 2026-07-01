@@ -4,6 +4,7 @@ import Weather from './Weather';
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
+  if (thumb.startsWith('/api/')) return thumb; // Jellyfin paths are already routable
   return `/api/poster?path=${encodeURIComponent(thumb)}`;
 }
 

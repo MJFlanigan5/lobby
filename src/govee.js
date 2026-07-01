@@ -1,18 +1,19 @@
 import { createSocket } from 'dgram';
+import { getConfig } from './config.js';
 
 export class GoveeSync {
-  constructor() {
-    this.ip = process.env.GOVEE_IP;
-    this.deviceId = process.env.GOVEE_DEVICE_ID;
-    this.configured = !!(this.ip && this.deviceId);
+  get configured() {
+    const c = getConfig();
+    return !!(c.GOVEE_IP && c.GOVEE_DEVICE_ID);
   }
 
   sendUdp(payload) {
     return new Promise((resolve) => {
+      const { GOVEE_IP } = getConfig();
       if (!this.configured) return resolve();
       const client = createSocket('udp4');
       const msg = Buffer.from(JSON.stringify(payload));
-      client.send(msg, 4003, this.ip, (err) => {
+      client.send(msg, 4003, GOVEE_IP, (err) => {
         client.close();
         if (err) console.error('[govee] UDP error:', err.message);
         resolve();
