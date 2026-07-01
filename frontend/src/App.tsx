@@ -46,7 +46,11 @@ export default function App() {
   useEffect(() => {
     const scrollable = urlPage === 'setup' || urlPage === 'control' || !!unconfigured;
     document.body.classList.toggle('scrollable', scrollable);
-    return () => document.body.classList.remove('scrollable');
+    document.documentElement.classList.toggle('scrollable', scrollable);
+    return () => {
+      document.body.classList.remove('scrollable');
+      document.documentElement.classList.remove('scrollable');
+    };
   }, [urlPage, unconfigured]);
 
   // On first load, check if anything is configured — redirect to setup if not
@@ -84,7 +88,7 @@ export default function App() {
   }
 
   if (activeMode === 'ambient') {
-    return <Ambient />;
+    return <Ambient displayConfig={displayConfig} />;
   }
 
   return (
