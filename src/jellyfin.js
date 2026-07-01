@@ -120,7 +120,7 @@ export class Jellyfin {
   async proxyImage(itemId, type = 'Primary') {
     if (!this.configured) return null;
     try {
-      const url = `${this.baseUrl}/Items/${itemId}/Images/${type}?api_key=${this.apiKey}&maxWidth=600`;
+      const url = `${this.baseUrl}/Items/${itemId}/Images/${type}?api_key=${this.apiKey}&maxWidth=1000&quality=90`;
       const res = await fetch(url);
       if (!res.ok) return null;
       const buffer = Buffer.from(await res.arrayBuffer());

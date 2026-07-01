@@ -56,6 +56,11 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
             merged.push(item);
           }
         }
+        // Shuffle so the slideshow order is random each load/refresh
+        for (let i = merged.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [merged[i], merged[j]] = [merged[j], merged[i]];
+        }
         setItems(merged);
       });
     };
@@ -144,8 +149,8 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
       />
 
-      {/* LOBBY wordmark + nav — top left */}
-      <div className="absolute top-6 left-8 z-20 flex items-center gap-4">
+      {/* LOBBY wordmark + nav — top left, nav hidden until hover */}
+      <div className="absolute top-6 left-8 z-20 flex items-center gap-4 group">
         <span
           className="text-white text-sm font-bold tracking-[0.4em] uppercase select-none"
           style={{ opacity: 0.3 }}
@@ -154,13 +159,13 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         </span>
         <a
           href="/?page=setup"
-          className="text-white/25 text-xs hover:text-white/60 transition-colors tracking-widest uppercase"
+          className="text-white/0 text-xs group-hover:text-white/50 hover:!text-white/80 transition-all duration-500 tracking-widest uppercase"
         >
           Setup
         </a>
         <a
           href="/?page=control"
-          className="text-white/25 text-xs hover:text-white/60 transition-colors tracking-widest uppercase"
+          className="text-white/0 text-xs group-hover:text-white/50 hover:!text-white/80 transition-all duration-500 tracking-widest uppercase"
         >
           Control
         </a>

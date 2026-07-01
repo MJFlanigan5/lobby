@@ -164,7 +164,7 @@ export class Plex {
   async proxyImage(thumbPath) {
     if (!this.baseUrl || !this.token) return null;
     try {
-      const url = `${this.baseUrl}${thumbPath}?X-Plex-Token=${this.token}`;
+      const url = `${this.baseUrl}${thumbPath}?X-Plex-Token=${this.token}&width=1000&quality=90`;
       const res = await fetch(url);
       if (!res.ok) return null;
       const buffer = Buffer.from(await res.arrayBuffer());
