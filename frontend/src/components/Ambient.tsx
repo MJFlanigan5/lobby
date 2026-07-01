@@ -149,11 +149,10 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
       />
 
-      {/* LOBBY wordmark + nav — top left, nav hidden until hover */}
+      {/* Nav — top left, fully hidden until hover */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-4 group">
         <span
-          className="text-white text-sm font-bold tracking-[0.4em] uppercase select-none"
-          style={{ opacity: 0.3 }}
+          className="text-white/0 text-sm font-bold tracking-[0.4em] uppercase select-none group-hover:text-white/40 transition-all duration-500"
         >
           {displayName}
         </span>
