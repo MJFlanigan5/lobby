@@ -101,14 +101,26 @@ export default function Ambient() {
         }}
       />
 
-      {/* LOBBY wordmark — top left */}
-      <div className="absolute top-6 left-8 z-20">
+      {/* LOBBY wordmark + nav — top left */}
+      <div className="absolute top-6 left-8 z-20 flex items-center gap-4">
         <span
           className="text-white text-sm font-bold tracking-[0.4em] uppercase select-none"
           style={{ opacity: 0.3 }}
         >
           LOBBY
         </span>
+        <a
+          href="/?page=setup"
+          className="text-white/25 text-xs hover:text-white/60 transition-colors tracking-widest uppercase"
+        >
+          Setup
+        </a>
+        <a
+          href="/?page=control"
+          className="text-white/25 text-xs hover:text-white/60 transition-colors tracking-widest uppercase"
+        >
+          Control
+        </a>
       </div>
 
       {/* Weather — bottom left */}
