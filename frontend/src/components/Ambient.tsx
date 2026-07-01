@@ -80,9 +80,20 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
 
   const current = items[index];
   const src = current ? posterUrl(current.thumb) : '';
+  const loading = items.length === 0;
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a]">
+      {loading && (
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(135deg, #111 0%, #0a0a0a 50%, #111 100%)',
+            backgroundSize: '400% 400%',
+            animation: 'gradientShift 4s ease infinite',
+          }}
+        />
+      )}
       {src && (
         <div
           key={src}

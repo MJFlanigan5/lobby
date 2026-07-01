@@ -91,14 +91,26 @@ interface FieldProps {
   placeholder?: string;
   type?: string;
   onChange: (v: string) => void;
+  onClear?: () => void;
 }
 
-function Field({ label, id, value, placeholder, type = 'text', onChange }: FieldProps) {
+function Field({ label, id, value, placeholder, type = 'text', onChange, onClear }: FieldProps) {
   return (
     <div>
-      <label htmlFor={id} className="block text-xs text-white/40 uppercase tracking-wider mb-1">
-        {label}
-      </label>
+      <div className="flex items-center justify-between mb-1">
+        <label htmlFor={id} className="text-xs text-white/40 uppercase tracking-wider">
+          {label}
+        </label>
+        {onClear && (
+          <button
+            type="button"
+            onClick={onClear}
+            className="text-xs text-white/20 hover:text-red-400 transition-colors"
+          >
+            Remove
+          </button>
+        )}
+      </div>
       <input
         id={id}
         type={type}
@@ -200,6 +212,12 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   const [testResultJF, setTestResultJF] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [toRemove, setToRemove] = useState<Set<string>>(new Set());
+
+  const clearSecret = (key: string) => {
+    setToRemove((prev) => new Set([...prev, key]));
+    setForm((f) => ({ ...f, [key]: '' }));
+  };
 
   useEffect(() => {
     fetch('/api/config')
@@ -271,13 +289,14 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     setSaving(true);
     setSaved(false);
     try {
-      // Send all values; skip secrets when blank so we don't overwrite stored tokens
+      // Send all values; skip secrets when blank unless user explicitly cleared them
       const SECRETS = new Set(['PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
-        if (SECRETS.has(k) && !v) continue;
+        if (SECRETS.has(k) && !v && !toRemove.has(k)) continue;
         payload[k] = v;
       }
+      setToRemove(new Set());
       const res = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -321,7 +340,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
         <div className="flex flex-col gap-4">
           <Section title="Plex">
             <Field label="Server URL" id="plex-url" value={form.PLEX_URL} placeholder="http://192.168.1.x:32400" onChange={set('PLEX_URL')} />
-            <Field label={status.PLEX_TOKEN_SET ? 'Token (set — leave blank to keep)' : 'Token'} id="plex-token" type="password" value={form.PLEX_TOKEN} placeholder={status.PLEX_TOKEN_SET ? '••••••••' : 'Your Plex token'} onChange={set('PLEX_TOKEN')} />
+            <Field label={status.PLEX_TOKEN_SET ? 'Token (set)' : 'Token'} id="plex-token" type="password" value={form.PLEX_TOKEN} placeholder={status.PLEX_TOKEN_SET ? 'Leave blank to keep' : 'Your Plex token'} onChange={set('PLEX_TOKEN')} onClear={status.PLEX_TOKEN_SET ? () => clearSecret('PLEX_TOKEN') : undefined} />
             <div className="flex items-center gap-3">
               <button
                 onClick={test}
@@ -340,7 +359,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
 
           <Section title="Jellyfin (optional)">
             <Field label="Server URL" id="jf-url" value={form.JELLYFIN_URL} placeholder="http://192.168.1.x:8096" onChange={set('JELLYFIN_URL')} />
-            <Field label={status.JELLYFIN_API_KEY_SET ? 'API Key (set — leave blank to keep)' : 'API Key'} id="jf-key" type="password" value={form.JELLYFIN_API_KEY} placeholder={status.JELLYFIN_API_KEY_SET ? '••••••••' : 'Dashboard → API Keys'} onChange={set('JELLYFIN_API_KEY')} />
+            <Field label={status.JELLYFIN_API_KEY_SET ? 'API Key (set)' : 'API Key'} id="jf-key" type="password" value={form.JELLYFIN_API_KEY} placeholder={status.JELLYFIN_API_KEY_SET ? 'Leave blank to keep' : 'Dashboard → API Keys'} onChange={set('JELLYFIN_API_KEY')} onClear={status.JELLYFIN_API_KEY_SET ? () => clearSecret('JELLYFIN_API_KEY') : undefined} />
             <div className="flex items-center gap-3">
               <button
                 onClick={testJellyfin}
@@ -359,12 +378,12 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
 
           <Section title="Sonarr (optional)">
             <Field label="Server URL" id="sonarr-url" value={form.SONARR_URL} placeholder="http://192.168.1.x:8989" onChange={set('SONARR_URL')} />
-            <Field label={status.SONARR_API_KEY_SET ? 'API Key (set — leave blank to keep)' : 'API Key'} id="sonarr-key" type="password" value={form.SONARR_API_KEY} placeholder={status.SONARR_API_KEY_SET ? '••••••••' : 'Settings → General → API Key'} onChange={set('SONARR_API_KEY')} />
+            <Field label={status.SONARR_API_KEY_SET ? 'API Key (set)' : 'API Key'} id="sonarr-key" type="password" value={form.SONARR_API_KEY} placeholder={status.SONARR_API_KEY_SET ? 'Leave blank to keep' : 'Settings → General → API Key'} onChange={set('SONARR_API_KEY')} onClear={status.SONARR_API_KEY_SET ? () => clearSecret('SONARR_API_KEY') : undefined} />
           </Section>
 
           <Section title="Radarr (optional)">
             <Field label="Server URL" id="radarr-url" value={form.RADARR_URL} placeholder="http://192.168.1.x:7878" onChange={set('RADARR_URL')} />
-            <Field label={status.RADARR_API_KEY_SET ? 'API Key (set — leave blank to keep)' : 'API Key'} id="radarr-key" type="password" value={form.RADARR_API_KEY} placeholder={status.RADARR_API_KEY_SET ? '••••••••' : 'Settings → General → API Key'} onChange={set('RADARR_API_KEY')} />
+            <Field label={status.RADARR_API_KEY_SET ? 'API Key (set)' : 'API Key'} id="radarr-key" type="password" value={form.RADARR_API_KEY} placeholder={status.RADARR_API_KEY_SET ? 'Leave blank to keep' : 'Settings → General → API Key'} onChange={set('RADARR_API_KEY')} onClear={status.RADARR_API_KEY_SET ? () => clearSecret('RADARR_API_KEY') : undefined} />
           </Section>
 
           <Section title="Govee Ambient Sync (optional)">

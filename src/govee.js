@@ -38,10 +38,4 @@ export class GoveeSync {
     await this.sendUdp(this.buildColorCommand(r, g, b));
   }
 
-  async fadeToColor(r, g, b, steps = 10) {
-    if (!this.configured) return;
-    // We don't have current color, so just set directly
-    // A proper fade would require reading current state first
-    await this.setColor(r, g, b);
-  }
 }

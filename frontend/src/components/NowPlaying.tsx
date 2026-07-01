@@ -6,12 +6,7 @@ interface NowPlayingProps {
   sessions: Session[];
 }
 
-export default function NowPlaying({ sessions }: NowPlayingProps) {
-  // If every active session is a music track, use the music layout
-  if (sessions.length > 0 && sessions.every((s) => s.type === 'track')) {
-    return <MusicCard sessions={sessions} />;
-  }
-
+function VideoGrid({ sessions }: { sessions: Session[] }) {
   const count = sessions.length;
 
   if (count === 1) {
@@ -51,7 +46,6 @@ export default function NowPlaying({ sessions }: NowPlayingProps) {
     );
   }
 
-  // 4+ sessions: 2x2 grid (show up to 4)
   return (
     <div className="w-full h-full grid grid-cols-2 grid-rows-2">
       {sessions.slice(0, 4).map((s) => (
@@ -59,6 +53,33 @@ export default function NowPlaying({ sessions }: NowPlayingProps) {
           <SessionCard session={s} size="quarter" />
         </div>
       ))}
+    </div>
+  );
+}
+
+export default function NowPlaying({ sessions }: NowPlayingProps) {
+  const tracks = sessions.filter((s) => s.type === 'track');
+  const videos = sessions.filter((s) => s.type !== 'track');
+
+  // All music
+  if (tracks.length > 0 && videos.length === 0) {
+    return <MusicCard sessions={tracks} />;
+  }
+
+  // All video
+  if (videos.length > 0 && tracks.length === 0) {
+    return <VideoGrid sessions={videos} />;
+  }
+
+  // Mixed: video takes the main area, music stacks below in a slim bar
+  return (
+    <div className="w-full h-full flex flex-col">
+      <div className="flex-1 min-h-0">
+        <VideoGrid sessions={videos} />
+      </div>
+      <div className="shrink-0">
+        <MusicCard sessions={tracks} />
+      </div>
     </div>
   );
 }

@@ -81,3 +81,9 @@ html, body, #root {
   from { height: 20%; }
   to   { height: 100%; }
 }
+
+/* Ambient loading shimmer */
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
