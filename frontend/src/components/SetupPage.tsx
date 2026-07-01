@@ -191,6 +191,24 @@ function GettingStarted() {
   );
 }
 
+async function geocodeLocation(name: string): Promise<{ lat: string; lon: string; display: string } | null> {
+  try {
+    const res = await fetch(
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(name)}&count=1&language=en&format=json`
+    );
+    const data = await res.json();
+    if (!data.results?.length) return null;
+    const r = data.results[0];
+    return {
+      lat: String(r.latitude),
+      lon: String(r.longitude),
+      display: [r.name, r.admin1, r.country].filter(Boolean).join(', '),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) {
   const [form, setForm] = useState({
     PLEX_URL: '', PLEX_TOKEN: '',
@@ -198,7 +216,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     SONARR_URL: '', SONARR_API_KEY: '',
     RADARR_URL: '', RADARR_API_KEY: '',
     GOVEE_IP: '', GOVEE_DEVICE_ID: '',
-    LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
+    LOCATION: '', LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
     SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
     SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
     SLIDESHOW_INTERVAL: '8',
@@ -208,6 +226,8 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     SHOW_CLOCK: 'true',
     DISPLAY_NAME: 'LOBBY',
   });
+  const [resolvedLocation, setResolvedLocation] = useState('');
+  const [geoError, setGeoError] = useState('');
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
@@ -235,6 +255,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           RADARR_URL: d.RADARR_URL || '',
           GOVEE_IP: d.GOVEE_IP || '',
           GOVEE_DEVICE_ID: d.GOVEE_DEVICE_ID || '',
+          LOCATION: d.LOCATION || '',
           LATITUDE: d.LATITUDE || '',
           LONGITUDE: d.LONGITUDE || '',
           TEMP_UNIT: d.TEMP_UNIT || 'fahrenheit',
@@ -249,6 +270,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SHOW_CLOCK: d.SHOW_CLOCK || 'true',
           DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
         }));
+        if (d.LOCATION) setResolvedLocation('');
       })
       .catch(() => {});
   }, []);
@@ -294,13 +316,29 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   const save = async () => {
     setSaving(true);
     setSaved(false);
+    setGeoError('');
     try {
-      // Send all values; skip secrets when blank unless user explicitly cleared them
       const SECRETS = new Set(['PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
         if (SECRETS.has(k) && !v && !toRemove.has(k)) continue;
         payload[k] = v;
+      }
+      // Geocode location → lat/lng
+      if (form.LOCATION) {
+        const geo = await geocodeLocation(form.LOCATION);
+        if (!geo) {
+          setGeoError('Location not found. Try a city name like "Atlanta, GA" or "London, UK".');
+          setSaving(false);
+          return;
+        }
+        payload.LATITUDE = geo.lat;
+        payload.LONGITUDE = geo.lon;
+        setResolvedLocation(geo.display);
+        setForm((f) => ({ ...f, LATITUDE: geo.lat, LONGITUDE: geo.lon }));
+      } else {
+        payload.LATITUDE = '';
+        payload.LONGITUDE = '';
       }
       const res = await fetch('/api/config', {
         method: 'POST',
@@ -395,15 +433,28 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           </Section>
 
           <Section title="Govee Ambient Sync (optional)">
+            <p className="text-white/30 text-xs leading-relaxed">
+              Extracts the dominant color from poster art while media plays and pushes it to your lights.
+              Requires a Govee RGBIC Wi-Fi device with <strong className="text-white/50">LAN Control enabled</strong> in the Govee app (device Settings → LAN Control). Works with strips, panels, and lamps — not the Sync Box.
+            </p>
             <Field label="Device IP" id="govee-ip" value={form.GOVEE_IP} placeholder="192.168.1.x" onChange={set('GOVEE_IP')} />
             <Field label="Device ID" id="govee-id" value={form.GOVEE_DEVICE_ID} placeholder="AA:BB:CC:DD:EE:FF:GG:HH" onChange={set('GOVEE_DEVICE_ID')} />
           </Section>
 
           <Section title="Weather (optional — Open-Meteo, no API key)">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Latitude" id="lat" value={form.LATITUDE} placeholder="33.749" onChange={set('LATITUDE')} />
-              <Field label="Longitude" id="lon" value={form.LONGITUDE} placeholder="-84.388" onChange={set('LONGITUDE')} />
-            </div>
+            <Field
+              label="Location"
+              id="location"
+              value={form.LOCATION}
+              placeholder="Atlanta, GA"
+              onChange={(v) => { set('LOCATION')(v); setResolvedLocation(''); setGeoError(''); }}
+            />
+            {resolvedLocation && (
+              <p className="text-xs text-white/30">Resolved to: {resolvedLocation}</p>
+            )}
+            {geoError && (
+              <p className="text-xs text-red-400">{geoError}</p>
+            )}
             <div>
               <label className="block text-xs text-white/40 uppercase tracking-wider mb-1">Temperature Unit</label>
               <div className="flex gap-3">
