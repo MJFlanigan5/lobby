@@ -204,6 +204,9 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     SLIDESHOW_INTERVAL: '8',
     CLOCK_FORMAT: '12h',
     LIBRARY_FILTER: 'all',
+    SHOW_WEATHER: 'true',
+    SHOW_CLOCK: 'true',
+    DISPLAY_NAME: 'LOBBY',
   });
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
@@ -242,6 +245,9 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '8',
           CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
           LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
+          SHOW_WEATHER: d.SHOW_WEATHER || 'true',
+          SHOW_CLOCK: d.SHOW_CLOCK || 'true',
+          DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
         }));
       })
       .catch(() => {});
@@ -459,6 +465,51 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
                     {opt.label}
                   </button>
                 ))}
+              </div>
+            </div>
+            <Field
+              label="Display Name"
+              id="display-name"
+              value={form.DISPLAY_NAME}
+              placeholder="LOBBY"
+              onChange={set('DISPLAY_NAME')}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Weather</p>
+                <div className="flex gap-2">
+                  {[{ value: 'true', label: 'Show' }, { value: 'false', label: 'Hide' }].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => set('SHOW_WEATHER')(opt.value)}
+                      className={`flex-1 py-2 text-xs rounded transition-colors ${
+                        form.SHOW_WEATHER === opt.value
+                          ? 'bg-white text-black font-semibold'
+                          : 'bg-white/5 text-white/50 hover:bg-white/10'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Clock</p>
+                <div className="flex gap-2">
+                  {[{ value: 'true', label: 'Show' }, { value: 'false', label: 'Hide' }].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => set('SHOW_CLOCK')(opt.value)}
+                      className={`flex-1 py-2 text-xs rounded transition-colors ${
+                        form.SHOW_CLOCK === opt.value
+                          ? 'bg-white text-black font-semibold'
+                          : 'bg-white/5 text-white/50 hover:bg-white/10'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             <div>

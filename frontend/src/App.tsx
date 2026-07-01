@@ -10,12 +10,18 @@ interface DisplayConfig {
   SLIDESHOW_INTERVAL: string;
   CLOCK_FORMAT: string;
   LIBRARY_FILTER: string;
+  SHOW_WEATHER: string;
+  SHOW_CLOCK: string;
+  DISPLAY_NAME: string;
 }
 
 const DEFAULT_DISPLAY: DisplayConfig = {
   SLIDESHOW_INTERVAL: '8',
   CLOCK_FORMAT: '12h',
   LIBRARY_FILTER: 'all',
+  SHOW_WEATHER: 'true',
+  SHOW_CLOCK: 'true',
+  DISPLAY_NAME: 'LOBBY',
 };
 
 export default function App() {
@@ -54,6 +60,9 @@ export default function App() {
           SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '8',
           CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
           LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
+          SHOW_WEATHER: d.SHOW_WEATHER || 'true',
+          SHOW_CLOCK: d.SHOW_CLOCK || 'true',
+          DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
         });
       })
       .catch(() => setUnconfigured(false));

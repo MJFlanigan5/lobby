@@ -43,6 +43,9 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
 
   const intervalMs = Math.max(3, parseInt(displayConfig?.SLIDESHOW_INTERVAL || '8', 10)) * 1000;
   const clockFormat = displayConfig?.CLOCK_FORMAT || '12h';
+  const showWeather = displayConfig?.SHOW_WEATHER !== 'false';
+  const showClock = displayConfig?.SHOW_CLOCK !== 'false';
+  const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
   useEffect(() => {
     Promise.all([
@@ -127,7 +130,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
           className="text-white text-sm font-bold tracking-[0.4em] uppercase select-none"
           style={{ opacity: 0.3 }}
         >
-          LOBBY
+          {displayName}
         </span>
         <a
           href="/?page=setup"
@@ -143,15 +146,17 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         </a>
       </div>
 
-      {/* Weather — bottom left */}
-      <div className="absolute bottom-6 left-8 z-20">
-        <Weather />
-      </div>
+      {showWeather && (
+        <div className="absolute bottom-6 left-8 z-20">
+          <Weather />
+        </div>
+      )}
 
-      {/* Clock — bottom right */}
-      <div className="absolute bottom-6 right-8 z-20">
-        <Clock format={clockFormat} />
-      </div>
+      {showClock && (
+        <div className="absolute bottom-6 right-8 z-20">
+          <Clock format={clockFormat} />
+        </div>
+      )}
     </div>
   );
 }

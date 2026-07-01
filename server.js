@@ -82,6 +82,9 @@ app.get('/api/health', (_req, res) => {
     SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
     CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
+    SHOW_WEATHER: c.SHOW_WEATHER || 'true',
+    SHOW_CLOCK: c.SHOW_CLOCK || 'true',
+    DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
   });
 });
 
@@ -141,6 +144,7 @@ app.post('/api/config', async (req, res) => {
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
     'SLIDESHOW_INTERVAL', 'CLOCK_FORMAT', 'LIBRARY_FILTER',
+    'SHOW_WEATHER', 'SHOW_CLOCK', 'DISPLAY_NAME',
   ];
   const settings = {};
   for (const k of ALLOWED) {
