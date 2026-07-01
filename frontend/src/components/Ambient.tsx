@@ -98,7 +98,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         <div
           key={src}
           className="absolute inset-0 ken-burns"
-          style={{ willChange: 'transform' }}
+          style={{ willChange: 'transform', animationDuration: `${intervalMs / 1000}s` }}
         >
           <img
             src={src}

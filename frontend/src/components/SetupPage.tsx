@@ -296,13 +296,15 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
         if (SECRETS.has(k) && !v && !toRemove.has(k)) continue;
         payload[k] = v;
       }
-      setToRemove(new Set());
       const res = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (res.ok) setSaved(true);
+      if (res.ok) {
+        setSaved(true);
+        setToRemove(new Set());
+      }
     } catch {}
     setSaving(false);
   };
