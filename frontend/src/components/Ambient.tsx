@@ -2,13 +2,19 @@ import { useState, useEffect, useRef } from 'react';
 import type { LibraryItem } from '../types';
 import Weather from './Weather';
 
+interface DisplayConfig {
+  SLIDESHOW_INTERVAL: string;
+  CLOCK_FORMAT: string;
+  LIBRARY_FILTER: string;
+}
+
 function posterUrl(thumb: string) {
   if (!thumb) return '';
   if (thumb.startsWith('/api/')) return thumb; // Jellyfin paths are already routable
   return `/api/poster?path=${encodeURIComponent(thumb)}`;
 }
 
-function Clock() {
+function Clock({ format }: { format: string }) {
   const [now, setNow] = useState(new Date());
 
   useEffect(() => {
@@ -16,7 +22,8 @@ function Clock() {
     return () => clearInterval(id);
   }, []);
 
-  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const hour12 = format !== '24h';
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12 });
   const date = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
@@ -27,19 +34,21 @@ function Clock() {
   );
 }
 
-export default function Ambient() {
+export default function Ambient({ displayConfig }: { displayConfig?: DisplayConfig }) {
   const [items, setItems] = useState<LibraryItem[]>([]);
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const intervalMs = Math.max(3, parseInt(displayConfig?.SLIDESHOW_INTERVAL || '8', 10)) * 1000;
+  const clockFormat = displayConfig?.CLOCK_FORMAT || '12h';
+
   useEffect(() => {
     Promise.all([
       fetch('/api/library/recent?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
       fetch('/api/library/random?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
     ]).then(([recent, random]) => {
-      // Recent items lead; random fills in anything not already present
       const seen = new Set<string>();
       const merged: LibraryItem[] = [];
       for (const item of [...(recent.items || []), ...(random.items || [])]) {
@@ -61,13 +70,13 @@ export default function Ambient() {
         setIndex((i) => (i + 1) % items.length);
         setVisible(true);
       }, 300);
-    }, 8_000);
+    }, intervalMs);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [items]);
+  }, [items, intervalMs]);
 
   const current = items[index];
   const src = current ? posterUrl(current.thumb) : '';
@@ -130,7 +139,7 @@ export default function Ambient() {
 
       {/* Clock — bottom right */}
       <div className="absolute bottom-6 right-8 z-20">
-        <Clock />
+        <Clock format={clockFormat} />
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getConfig } from '../config.js';
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -20,6 +21,13 @@ function mergeById(arrays) {
 export default function libraryRoute(plex, jellyfin) {
   const router = Router();
 
+  function applyFilter(items) {
+    const filter = getConfig().LIBRARY_FILTER || 'all';
+    if (filter === 'movies') return items.filter((i) => i.type === 'movie');
+    if (filter === 'shows') return items.filter((i) => i.type === 'show');
+    return items;
+  }
+
   router.get('/random', async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit || '12', 10), 50);
     const half = Math.ceil(limit / 2);
@@ -27,7 +35,7 @@ export default function libraryRoute(plex, jellyfin) {
       plex.getLibraryItems(half),
       jellyfin.getLibraryItems(half),
     ]);
-    const items = shuffle(mergeById([plexItems, jfItems])).slice(0, limit);
+    const items = applyFilter(shuffle(mergeById([plexItems, jfItems]))).slice(0, limit);
     res.json({ items });
   });
 
@@ -38,8 +46,7 @@ export default function libraryRoute(plex, jellyfin) {
       plex.getRecentlyAdded(half),
       jellyfin.getRecentlyAdded(half),
     ]);
-    // Recent items keep chronological order (plex and jf interleaved by position)
-    const items = mergeById([plexItems, jfItems]).slice(0, limit);
+    const items = applyFilter(mergeById([plexItems, jfItems])).slice(0, limit);
     res.json({ items });
   });
 

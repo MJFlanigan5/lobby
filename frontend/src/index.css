@@ -14,7 +14,7 @@ html, body, #root {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Portrait mode */
+/* Portrait mode — rotate entire root 90deg */
 .portrait {
   transform: rotate(90deg);
   transform-origin: center;
@@ -24,6 +24,14 @@ html, body, #root {
   top: 50%;
   left: 50%;
   translate: -50% -50%;
+}
+
+/* In portrait, multi-session grid stacks vertically instead of in a 2×2 */
+.portrait .grid-cols-2 {
+  grid-template-columns: 1fr;
+}
+.portrait .grid-rows-2 {
+  grid-template-rows: repeat(4, 1fr);
 }
 
 /* Grain overlay */

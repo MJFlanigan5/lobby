@@ -75,9 +75,13 @@ app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     plex: !!(c.PLEX_URL && c.PLEX_TOKEN),
+    jellyfin: !!(c.JELLYFIN_URL && c.JELLYFIN_API_KEY),
     sonarr: !!(c.SONARR_URL && c.SONARR_API_KEY),
     radarr: !!(c.RADARR_URL && c.RADARR_API_KEY),
     govee: !!(c.GOVEE_IP && c.GOVEE_DEVICE_ID),
+    SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '8',
+    CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
+    LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
   });
 });
 
@@ -136,13 +140,22 @@ app.post('/api/config', async (req, res) => {
     'LATITUDE', 'LONGITUDE', 'TEMP_UNIT',
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
+    'SLIDESHOW_INTERVAL', 'CLOCK_FORMAT', 'LIBRARY_FILTER',
   ];
   const settings = {};
   for (const k of ALLOWED) {
     if (typeof req.body[k] === 'string') settings[k] = req.body[k].trim();
   }
   saveConfig(settings);
-  res.json({ ok: true, restart: true });
+
+  // Reinitialize media server instances so credential changes apply immediately
+  const newCfg = getConfig();
+  plex.baseUrl = (newCfg.PLEX_URL || '').replace(/\/$/, '');
+  plex.token = newCfg.PLEX_TOKEN || '';
+  jellyfin.baseUrl = (newCfg.JELLYFIN_URL || '').replace(/\/$/, '');
+  jellyfin.apiKey = newCfg.JELLYFIN_API_KEY || '';
+
+  res.json({ ok: true });
 });
 
 app.post('/api/config/test', async (req, res) => {

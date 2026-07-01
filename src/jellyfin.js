@@ -19,7 +19,8 @@ export class Jellyfin {
   async getSessions() {
     if (!this.configured) return [];
     try {
-      const sessions = await this.fetch('/Sessions?activeWithinSeconds=60');
+      const raw = await this.fetch('/Sessions?activeWithinSeconds=60');
+      const sessions = Array.isArray(raw) ? raw : [];
       return sessions
         .filter((s) => s.NowPlayingItem)
         .map((s) => {
@@ -34,8 +35,10 @@ export class Jellyfin {
           // Use series poster for episodes, item poster otherwise
           const thumbId = isEpisode ? (item.SeriesId || item.Id) : item.Id;
           const thumb = `/api/jfimage?id=${thumbId}&type=Primary`;
-          const art = item.BackdropImageTags?.length
-            ? `/api/jfimage?id=${item.Id}&type=Backdrop`
+          // For episodes use series backdrop; for others use item backdrop
+          const artId = isEpisode ? (item.SeriesId || item.Id) : item.Id;
+          const art = (item.BackdropImageTags?.length || isEpisode)
+            ? `/api/jfimage?id=${artId}&type=Backdrop`
             : '';
 
           return {

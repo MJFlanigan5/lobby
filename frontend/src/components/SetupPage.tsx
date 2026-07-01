@@ -189,6 +189,9 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
     SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
     SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
+    SLIDESHOW_INTERVAL: '8',
+    CLOCK_FORMAT: '12h',
+    LIBRARY_FILTER: 'all',
   });
   const [status, setStatus] = useState<Partial<ConfigState>>({});
   const [testing, setTesting] = useState(false);
@@ -218,6 +221,9 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SCHEDULE_CS_HOUR: d.SCHEDULE_CS_HOUR || '18',
           SCHEDULE_AUTO_DAY: d.SCHEDULE_AUTO_DAY || '',
           SCHEDULE_AUTO_HOUR: d.SCHEDULE_AUTO_HOUR || '6',
+          SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '8',
+          CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
+          LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
         }));
       })
       .catch(() => {});
@@ -391,6 +397,73 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
             </div>
           </Section>
 
+          <Section title="Display Settings">
+            <div>
+              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Slideshow Speed</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: '5', label: '5s' },
+                  { value: '8', label: '8s' },
+                  { value: '15', label: '15s' },
+                  { value: '30', label: '30s' },
+                  { value: '60', label: '1m' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => set('SLIDESHOW_INTERVAL')(opt.value)}
+                    className={`px-4 py-2 text-xs rounded transition-colors ${
+                      form.SLIDESHOW_INTERVAL === opt.value
+                        ? 'bg-white text-black font-semibold'
+                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Clock Format</p>
+              <div className="flex gap-3">
+                {[{ value: '12h', label: '12-hour' }, { value: '24h', label: '24-hour' }].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => set('CLOCK_FORMAT')(opt.value)}
+                    className={`px-4 py-2 text-xs rounded transition-colors ${
+                      form.CLOCK_FORMAT === opt.value
+                        ? 'bg-white text-black font-semibold'
+                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Library Content</p>
+              <div className="flex gap-2 flex-wrap">
+                {[
+                  { value: 'all', label: 'Movies + Shows' },
+                  { value: 'movies', label: 'Movies only' },
+                  { value: 'shows', label: 'Shows only' },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => set('LIBRARY_FILTER')(opt.value)}
+                    className={`px-4 py-2 text-xs rounded transition-colors ${
+                      form.LIBRARY_FILTER === opt.value
+                        ? 'bg-white text-black font-semibold'
+                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </Section>
+
           <Section title="Auto-Schedule (optional)">
             <ScheduleRow
               label="Switch to Coming Soon"
@@ -419,10 +492,10 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
 
           {saved && (
             <p className="text-center text-xs text-green-400">
-              Saved. Restart the container for changes to take effect:
-              <code className="block mt-1 text-white/40 font-mono">
-                cd /opt/lobby && docker compose restart
-              </code>
+              Saved. Reload the display page to apply changes.
+              <span className="block mt-1 text-white/30">
+                Schedule changes require a container restart.
+              </span>
             </p>
           )}
         </div>
