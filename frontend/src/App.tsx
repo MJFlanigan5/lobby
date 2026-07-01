@@ -44,10 +44,10 @@ export default function App() {
   }, [isPortrait]);
 
   useEffect(() => {
-    const scrollable = urlPage === 'setup' || urlPage === 'control';
+    const scrollable = urlPage === 'setup' || urlPage === 'control' || !!unconfigured;
     document.body.classList.toggle('scrollable', scrollable);
     return () => document.body.classList.remove('scrollable');
-  }, [urlPage]);
+  }, [urlPage, unconfigured]);
 
   // On first load, check if anything is configured — redirect to setup if not
   useEffect(() => {
