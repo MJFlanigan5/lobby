@@ -104,12 +104,19 @@ export default function SessionCard({ session, size }: SessionCardProps) {
         )}
 
         {session.duration > 0 && (
-          <div className="mt-3 h-[3px] w-full bg-white/20 rounded-none">
-            <div
-              className="h-full bg-white/80 transition-all duration-1000"
-              style={{ width: `${session.progress}%` }}
-            />
-          </div>
+          <>
+            <div className="mt-3 h-[3px] w-full bg-white/20 rounded-none">
+              <div
+                className="h-full bg-white/80 transition-all duration-1000"
+                style={{ width: `${session.progress}%` }}
+              />
+            </div>
+            {session.type !== 'track' && (
+              <p className="mt-1.5 text-xs text-white/30 text-right tabular-nums">
+                Ends at {new Date(Date.now() + (session.duration - session.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
