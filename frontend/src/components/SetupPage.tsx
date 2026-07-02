@@ -269,7 +269,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SCHEDULE_CS_HOUR: d.SCHEDULE_CS_HOUR || '18',
           SCHEDULE_AUTO_DAY: d.SCHEDULE_AUTO_DAY || '',
           SCHEDULE_AUTO_HOUR: d.SCHEDULE_AUTO_HOUR || '6',
-          SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '8',
+          SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '20',
           CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
           LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
           SHOW_WEATHER: d.SHOW_WEATHER || 'true',

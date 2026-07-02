@@ -213,12 +213,14 @@ app.post('/api/config', async (req, res) => {
 });
 
 app.post('/api/config/test', async (req, res) => {
-  const { PLEX_URL, PLEX_TOKEN } = req.body;
-  if (!PLEX_URL || !PLEX_TOKEN) {
+  const c = getConfig();
+  const url = req.body.PLEX_URL || c.PLEX_URL;
+  const token = req.body.PLEX_TOKEN || c.PLEX_TOKEN;
+  if (!url || !token) {
     return res.status(400).json({ error: 'PLEX_URL and PLEX_TOKEN required' });
   }
   try {
-    const testPlex = new Plex({ plexUrl: PLEX_URL, plexToken: PLEX_TOKEN });
+    const testPlex = new Plex({ plexUrl: url, plexToken: token });
     await testPlex.getSessions();
     res.json({ ok: true });
   } catch (e) {
@@ -227,13 +229,15 @@ app.post('/api/config/test', async (req, res) => {
 });
 
 app.post('/api/config/test/sonarr', async (req, res) => {
-  const { SONARR_URL, SONARR_API_KEY } = req.body;
-  if (!SONARR_URL || !SONARR_API_KEY) {
+  const c = getConfig();
+  const url = req.body.SONARR_URL || c.SONARR_URL;
+  const key = req.body.SONARR_API_KEY || c.SONARR_API_KEY;
+  if (!url || !key) {
     return res.status(400).json({ error: 'SONARR_URL and SONARR_API_KEY required' });
   }
   try {
-    const r = await fetch(`${SONARR_URL.replace(/\/$/, '')}/api/v3/system/status`, {
-      headers: { 'X-Api-Key': SONARR_API_KEY },
+    const r = await fetch(`${url.replace(/\/$/, '')}/api/v3/system/status`, {
+      headers: { 'X-Api-Key': key },
     });
     if (!r.ok) throw new Error(`Status ${r.status}`);
     res.json({ ok: true });
@@ -243,13 +247,15 @@ app.post('/api/config/test/sonarr', async (req, res) => {
 });
 
 app.post('/api/config/test/radarr', async (req, res) => {
-  const { RADARR_URL, RADARR_API_KEY } = req.body;
-  if (!RADARR_URL || !RADARR_API_KEY) {
+  const c = getConfig();
+  const url = req.body.RADARR_URL || c.RADARR_URL;
+  const key = req.body.RADARR_API_KEY || c.RADARR_API_KEY;
+  if (!url || !key) {
     return res.status(400).json({ error: 'RADARR_URL and RADARR_API_KEY required' });
   }
   try {
-    const r = await fetch(`${RADARR_URL.replace(/\/$/, '')}/api/v3/system/status`, {
-      headers: { 'X-Api-Key': RADARR_API_KEY },
+    const r = await fetch(`${url.replace(/\/$/, '')}/api/v3/system/status`, {
+      headers: { 'X-Api-Key': key },
     });
     if (!r.ok) throw new Error(`Status ${r.status}`);
     res.json({ ok: true });
@@ -259,12 +265,14 @@ app.post('/api/config/test/radarr', async (req, res) => {
 });
 
 app.post('/api/config/test/jellyfin', async (req, res) => {
-  const { JELLYFIN_URL, JELLYFIN_API_KEY } = req.body;
-  if (!JELLYFIN_URL || !JELLYFIN_API_KEY) {
+  const c = getConfig();
+  const url = req.body.JELLYFIN_URL || c.JELLYFIN_URL;
+  const key = req.body.JELLYFIN_API_KEY || c.JELLYFIN_API_KEY;
+  if (!url || !key) {
     return res.status(400).json({ error: 'JELLYFIN_URL and JELLYFIN_API_KEY required' });
   }
   try {
-    const testJF = new Jellyfin({ jellyfinUrl: JELLYFIN_URL, apiKey: JELLYFIN_API_KEY });
+    const testJF = new Jellyfin({ jellyfinUrl: url, apiKey: key });
     await testJF.getSessions();
     res.json({ ok: true });
   } catch (e) {
