@@ -74,7 +74,7 @@ export class Jellyfin {
     try {
       const data = await this.fetch(
         `/Items?Recursive=true&IncludeItemTypes=Movie,Series` +
-        `&Fields=PrimaryImageAspectRatio&Limit=200&SortBy=Random`
+        `&Fields=PrimaryImageAspectRatio&Limit=500&SortBy=Random`
       );
       return (data.Items || []).slice(0, limit).map((item) => ({
         id: `jf-${item.Id}`,

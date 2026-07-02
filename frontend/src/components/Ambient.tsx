@@ -46,8 +46,8 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   useEffect(() => {
     const load = () => {
       Promise.all([
-        fetch('/api/library/recent?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
-        fetch('/api/library/random?limit=15').then((r) => r.json()).catch(() => ({ items: [] })),
+        fetch('/api/library/recent?limit=30').then((r) => r.json()).catch(() => ({ items: [] })),
+        fetch('/api/library/random?limit=50').then((r) => r.json()).catch(() => ({ items: [] })),
       ]).then(([recent, random]) => {
         const seen = new Set<string>();
         const merged: LibraryItem[] = [];
@@ -67,7 +67,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       });
     };
     load();
-    const id = setInterval(load, 30 * 60_000);
+    const id = setInterval(load, 15 * 60_000);
     return () => clearInterval(id);
   }, []);
 

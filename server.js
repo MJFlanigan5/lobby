@@ -226,6 +226,38 @@ app.post('/api/config/test', async (req, res) => {
   }
 });
 
+app.post('/api/config/test/sonarr', async (req, res) => {
+  const { SONARR_URL, SONARR_API_KEY } = req.body;
+  if (!SONARR_URL || !SONARR_API_KEY) {
+    return res.status(400).json({ error: 'SONARR_URL and SONARR_API_KEY required' });
+  }
+  try {
+    const r = await fetch(`${SONARR_URL.replace(/\/$/, '')}/api/v3/system/status`, {
+      headers: { 'X-Api-Key': SONARR_API_KEY },
+    });
+    if (!r.ok) throw new Error(`Status ${r.status}`);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Connection failed' });
+  }
+});
+
+app.post('/api/config/test/radarr', async (req, res) => {
+  const { RADARR_URL, RADARR_API_KEY } = req.body;
+  if (!RADARR_URL || !RADARR_API_KEY) {
+    return res.status(400).json({ error: 'RADARR_URL and RADARR_API_KEY required' });
+  }
+  try {
+    const r = await fetch(`${RADARR_URL.replace(/\/$/, '')}/api/v3/system/status`, {
+      headers: { 'X-Api-Key': RADARR_API_KEY },
+    });
+    if (!r.ok) throw new Error(`Status ${r.status}`);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(400).json({ error: e.message || 'Connection failed' });
+  }
+});
+
 app.post('/api/config/test/jellyfin', async (req, res) => {
   const { JELLYFIN_URL, JELLYFIN_API_KEY } = req.body;
   if (!JELLYFIN_URL || !JELLYFIN_API_KEY) {

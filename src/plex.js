@@ -96,7 +96,7 @@ export class Plex {
       for (const lib of libs) {
         try {
           const data = await this.fetch(
-            `/library/sections/${lib.key}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=200`
+            `/library/sections/${lib.key}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=500`
           );
           const items = data?.MediaContainer?.Metadata ?? [];
           allItems.push(...items.map((item) => ({

@@ -234,6 +234,10 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
   const [testingJF, setTestingJF] = useState(false);
   const [testResultJF, setTestResultJF] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingSonarr, setTestingSonarr] = useState(false);
+  const [testResultSonarr, setTestResultSonarr] = useState<{ ok: boolean; message: string } | null>(null);
+  const [testingRadarr, setTestingRadarr] = useState(false);
+  const [testResultRadarr, setTestResultRadarr] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
@@ -313,6 +317,42 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
       setTestResultJF({ ok: false, message: 'Request failed' });
     } finally {
       setTestingJF(false);
+    }
+  };
+
+  const testSonarr = async () => {
+    setTestingSonarr(true);
+    setTestResultSonarr(null);
+    try {
+      const res = await fetch('/api/config/test/sonarr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ SONARR_URL: form.SONARR_URL, SONARR_API_KEY: form.SONARR_API_KEY }),
+      });
+      const d = await res.json();
+      setTestResultSonarr({ ok: res.ok, message: res.ok ? 'Sonarr connected successfully' : (d.error || 'Connection failed') });
+    } catch {
+      setTestResultSonarr({ ok: false, message: 'Request failed' });
+    } finally {
+      setTestingSonarr(false);
+    }
+  };
+
+  const testRadarr = async () => {
+    setTestingRadarr(true);
+    setTestResultRadarr(null);
+    try {
+      const res = await fetch('/api/config/test/radarr', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ RADARR_URL: form.RADARR_URL, RADARR_API_KEY: form.RADARR_API_KEY }),
+      });
+      const d = await res.json();
+      setTestResultRadarr({ ok: res.ok, message: res.ok ? 'Radarr connected successfully' : (d.error || 'Connection failed') });
+    } catch {
+      setTestResultRadarr({ ok: false, message: 'Request failed' });
+    } finally {
+      setTestingRadarr(false);
     }
   };
 
@@ -433,11 +473,39 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           <Section title="Sonarr (optional)">
             <Field label="Server URL" id="sonarr-url" value={form.SONARR_URL} placeholder="http://192.168.1.x:8989" onChange={set('SONARR_URL')} />
             <Field label={status.SONARR_API_KEY_SET ? 'API Key (set)' : 'API Key'} id="sonarr-key" type="password" value={form.SONARR_API_KEY} placeholder={status.SONARR_API_KEY_SET ? 'Leave blank to keep' : 'Settings → General → API Key'} onChange={set('SONARR_API_KEY')} onClear={status.SONARR_API_KEY_SET ? () => clearSecret('SONARR_API_KEY') : undefined} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={testSonarr}
+                disabled={testingSonarr || !form.SONARR_URL}
+                className="text-xs px-3 py-1.5 bg-white/8 text-white/60 hover:bg-white/12 hover:text-white/80 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {testingSonarr ? 'Testing...' : 'Test connection'}
+              </button>
+              {testResultSonarr && (
+                <span className={`text-xs ${testResultSonarr.ok ? 'text-green-400' : 'text-red-400'}`}>
+                  {testResultSonarr.message}
+                </span>
+              )}
+            </div>
           </Section>
 
           <Section title="Radarr (optional)">
             <Field label="Server URL" id="radarr-url" value={form.RADARR_URL} placeholder="http://192.168.1.x:7878" onChange={set('RADARR_URL')} />
             <Field label={status.RADARR_API_KEY_SET ? 'API Key (set)' : 'API Key'} id="radarr-key" type="password" value={form.RADARR_API_KEY} placeholder={status.RADARR_API_KEY_SET ? 'Leave blank to keep' : 'Settings → General → API Key'} onChange={set('RADARR_API_KEY')} onClear={status.RADARR_API_KEY_SET ? () => clearSecret('RADARR_API_KEY') : undefined} />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={testRadarr}
+                disabled={testingRadarr || !form.RADARR_URL}
+                className="text-xs px-3 py-1.5 bg-white/8 text-white/60 hover:bg-white/12 hover:text-white/80 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {testingRadarr ? 'Testing...' : 'Test connection'}
+              </button>
+              {testResultRadarr && (
+                <span className={`text-xs ${testResultRadarr.ok ? 'text-green-400' : 'text-red-400'}`}>
+                  {testResultRadarr.message}
+                </span>
+              )}
+            </div>
           </Section>
 
           <Section title="Govee Ambient Sync (optional)">

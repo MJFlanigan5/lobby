@@ -31,9 +31,11 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   // No upcoming content — fall back to ambient display
   if (items.length === 0) return <Ambient displayConfig={displayConfig} />;
 
+  const visible = items.slice(0, 12);
+
   return (
-    <div className="w-full h-full bg-[#0a0a0a] overflow-auto p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">
+      <div className="flex items-center justify-between mb-6 shrink-0">
         <h1
           className="text-white text-sm font-bold tracking-[0.4em] uppercase select-none"
           style={{ opacity: 0.4 }}
@@ -47,9 +49,9 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-5">
-        {items.map((item, i) => (
-          <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in">
+      <div className="grid grid-cols-4 gap-4 flex-1 min-h-0 overflow-hidden content-start">
+        {visible.map((item, i) => (
+          <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in min-h-0">
             {item.thumb ? (
               <img
                 src={item.thumb}
