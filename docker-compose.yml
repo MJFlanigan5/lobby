@@ -31,4 +31,5 @@ services:
       - LIBRARY_FILTER=${LIBRARY_FILTER:-all}
       - SHOW_WEATHER=${SHOW_WEATHER:-true}
       - SHOW_CLOCK=${SHOW_CLOCK:-true}
+      - SHOW_TITLES=${SHOW_TITLES:-true}
       - DISPLAY_NAME=${DISPLAY_NAME:-LOBBY}

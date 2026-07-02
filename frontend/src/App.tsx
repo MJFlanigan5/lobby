@@ -13,6 +13,7 @@ const DEFAULT_DISPLAY: DisplayConfig = {
   LIBRARY_FILTER: 'all',
   SHOW_WEATHER: 'true',
   SHOW_CLOCK: 'true',
+  SHOW_TITLES: 'true',
   DISPLAY_NAME: 'LOBBY',
 };
 

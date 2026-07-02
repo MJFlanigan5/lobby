@@ -40,6 +40,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   const clockFormat = displayConfig?.CLOCK_FORMAT || '12h';
   const showWeather = displayConfig?.SHOW_WEATHER !== 'false';
   const showClock = displayConfig?.SHOW_CLOCK !== 'false';
+  const showTitles = displayConfig?.SHOW_TITLES !== 'false';
   const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
           [merged[i], merged[j]] = [merged[j], merged[i]];
         }
         setItems(merged);
+        setIndex(0);
       });
     };
     load();
@@ -130,6 +132,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
               opacity: visible ? 1 : 0,
               transition: 'opacity 300ms ease-in-out',
             }}
+            onError={() => setIndex((i) => (i + 1) % items.length)}
           />
         </div>
       )}
@@ -144,10 +147,12 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       />
 
       {/* Bottom gradient for title legibility */}
-      <div
-        className="absolute inset-x-0 bottom-0 pointer-events-none"
-        style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
-      />
+      {showTitles && (
+        <div
+          className="absolute inset-x-0 bottom-0 pointer-events-none"
+          style={{ height: '45%', background: 'linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }}
+        />
+      )}
 
       {/* Nav — top left, fully hidden until hover */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-4 group">
@@ -171,7 +176,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       </div>
 
       {/* Title overlay */}
-      {current && (
+      {showTitles && current && (
         <div
           className="absolute bottom-20 left-10 right-10 z-20 pointer-events-none"
           style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}

@@ -224,6 +224,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     LIBRARY_FILTER: 'all',
     SHOW_WEATHER: 'true',
     SHOW_CLOCK: 'true',
+    SHOW_TITLES: 'true',
     DISPLAY_NAME: 'LOBBY',
   });
   const [resolvedLocation, setResolvedLocation] = useState('');
@@ -235,6 +236,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   const [testResultJF, setTestResultJF] = useState<{ ok: boolean; message: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [toRemove, setToRemove] = useState<Set<string>>(new Set());
 
   const clearSecret = (key: string) => {
@@ -268,6 +270,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
           SHOW_WEATHER: d.SHOW_WEATHER || 'true',
           SHOW_CLOCK: d.SHOW_CLOCK || 'true',
+          SHOW_TITLES: d.SHOW_TITLES || 'true',
           DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
         }));
         if (d.LOCATION) setResolvedLocation('');
@@ -316,6 +319,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   const save = async () => {
     setSaving(true);
     setSaved(false);
+    setSaveError('');
     setGeoError('');
     try {
       const SECRETS = new Set(['PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
@@ -348,8 +352,12 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
       if (res.ok) {
         setSaved(true);
         setToRemove(new Set());
+      } else {
+        setSaveError('Save failed — server returned an error.');
       }
-    } catch {}
+    } catch {
+      setSaveError('Save failed — could not reach the server.');
+    }
     setSaving(false);
   };
 
@@ -525,7 +533,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
               placeholder="LOBBY"
               onChange={set('DISPLAY_NAME')}
             />
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Weather</p>
                 <div className="flex gap-2">
@@ -553,6 +561,24 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
                       onClick={() => set('SHOW_CLOCK')(opt.value)}
                       className={`flex-1 py-2 text-xs rounded transition-colors ${
                         form.SHOW_CLOCK === opt.value
+                          ? 'bg-white text-black font-semibold'
+                          : 'bg-white/5 text-white/50 hover:bg-white/10'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Titles</p>
+                <div className="flex gap-2">
+                  {[{ value: 'true', label: 'Show' }, { value: 'false', label: 'Hide' }].map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => set('SHOW_TITLES')(opt.value)}
+                      className={`flex-1 py-2 text-xs rounded transition-colors ${
+                        form.SHOW_TITLES === opt.value
                           ? 'bg-white text-black font-semibold'
                           : 'bg-white/5 text-white/50 hover:bg-white/10'
                       }`}
@@ -615,11 +641,11 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
 
           {saved && (
             <p className="text-center text-xs text-green-400">
-              Saved. Reload the display page to apply changes.
-              <span className="block mt-1 text-white/30">
-                Schedule changes require a container restart.
-              </span>
+              Saved — display updated automatically.
             </p>
+          )}
+          {saveError && (
+            <p className="text-center text-xs text-red-400">{saveError}</p>
           )}
         </div>
 

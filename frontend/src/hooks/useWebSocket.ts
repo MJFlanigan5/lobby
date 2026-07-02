@@ -7,6 +7,7 @@ export interface DisplayConfig {
   LIBRARY_FILTER: string;
   SHOW_WEATHER: string;
   SHOW_CLOCK: string;
+  SHOW_TITLES: string;
   DISPLAY_NAME: string;
 }
 

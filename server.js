@@ -86,6 +86,7 @@ app.get('/api/health', (_req, res) => {
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
+    SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
   });
 });
@@ -102,6 +103,7 @@ function getDisplayConfig() {
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
+    SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
   };
 }
@@ -169,6 +171,7 @@ app.get('/api/config', (_req, res) => {
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
     SHOW_WEATHER: c.SHOW_WEATHER || 'true',
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
+    SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
     // secrets: presence only
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
@@ -189,7 +192,7 @@ app.post('/api/config', async (req, res) => {
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
     'SLIDESHOW_INTERVAL', 'CLOCK_FORMAT', 'LIBRARY_FILTER',
-    'SHOW_WEATHER', 'SHOW_CLOCK', 'DISPLAY_NAME',
+    'SHOW_WEATHER', 'SHOW_CLOCK', 'SHOW_TITLES', 'DISPLAY_NAME',
   ];
   const settings = {};
   for (const k of ALLOWED) {
