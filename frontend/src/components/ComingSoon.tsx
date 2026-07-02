@@ -31,7 +31,7 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   // No upcoming content — fall back to ambient display
   if (items.length === 0) return <Ambient displayConfig={displayConfig} />;
 
-  const visible = items.slice(0, 12);
+  const visible = items.slice(0, 6);
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">
@@ -49,7 +49,7 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 flex-1 min-h-0 overflow-hidden content-start">
+      <div className="grid grid-cols-6 gap-4 flex-1 min-h-0 overflow-hidden content-start">
         {visible.map((item, i) => (
           <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in min-h-0">
             {item.thumb ? (
