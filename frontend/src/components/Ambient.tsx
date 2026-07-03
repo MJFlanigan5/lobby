@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import type { LibraryItem } from '../types';
+import { useState, useEffect } from 'react';
 import type { DisplayConfig } from '../hooks/useWebSocket';
+import { useLibrary } from '../hooks/useLibrary';
 import Weather from './Weather';
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
-  if (thumb.startsWith('/api/')) return thumb; // Jellyfin
-  if (thumb.startsWith('http://') || thumb.startsWith('https://')) return thumb; // Radarr/Sonarr remote URLs
+  if (thumb.startsWith('/api/')) return thumb;
+  if (thumb.startsWith('http://') || thumb.startsWith('https://')) return thumb;
   return `/api/poster?path=${encodeURIComponent(thumb)}`;
 }
 
@@ -18,23 +18,6 @@ function formatAirDate(dateStr: string) {
   if (diffDays === 1) return 'Tomorrow';
   if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'long' });
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-}
-
-function interleave(library: LibraryItem[], upcoming: LibraryItem[], every = 5): LibraryItem[] {
-  if (!upcoming.length) return library;
-  if (!library.length) return upcoming;
-  const result: LibraryItem[] = [];
-  let slot = 0;
-  for (let i = 0; i < library.length; i++) {
-    result.push(library[i]);
-    if ((i + 1) % every === 0) {
-      result.push(upcoming[slot % upcoming.length]);
-      slot++;
-    }
-  }
-  // Library smaller than `every` — append upcoming so they're not silently dropped
-  if (slot === 0) result.push(...upcoming);
-  return result;
 }
 
 function Clock({ format }: { format: string }) {
@@ -58,12 +41,6 @@ function Clock({ format }: { format: string }) {
 }
 
 export default function Ambient({ displayConfig }: { displayConfig?: DisplayConfig }) {
-  const [items, setItems] = useState<LibraryItem[]>([]);
-  const [index, setIndex] = useState(0);
-  const [visible, setVisible] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const intervalMs = Math.max(3, parseInt(displayConfig?.SLIDESHOW_INTERVAL || '20', 10)) * 1000;
   const clockFormat = displayConfig?.CLOCK_FORMAT || '12h';
   const showWeather = displayConfig?.SHOW_WEATHER !== 'false';
@@ -71,69 +48,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   const showTitles = displayConfig?.SHOW_TITLES !== 'false';
   const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
-  useEffect(() => {
-    const load = () => {
-      Promise.all([
-        fetch('/api/library/recent?limit=30').then((r) => r.json()).catch(() => ({ items: [] })),
-        fetch('/api/library/random?limit=100').then((r) => r.json()).catch(() => ({ items: [] })),
-        fetch('/api/upcoming').then((r) => r.json()).catch(() => ({ upcoming: [] })),
-      ]).then(([recent, random, upcomingData]) => {
-        // Deduplicate and merge library items
-        const seen = new Set<string>();
-        const library: LibraryItem[] = [];
-        for (const item of [...(recent.items || []), ...(random.items || [])]) {
-          if (!seen.has(item.id)) {
-            seen.add(item.id);
-            library.push(item);
-          }
-        }
-        // Shuffle library
-        for (let i = library.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [library[i], library[j]] = [library[j], library[i]];
-        }
-
-        // Convert upcoming items to LibraryItem shape, skip those with no poster
-        const upcomingItems: LibraryItem[] = (upcomingData.upcoming || [])
-          .filter((u: { thumb?: string }) => !!u.thumb)
-          .map((u: { title: string; subtitle?: string; airDate?: string; thumb: string; type: string }, idx: number) => ({
-            id: `upcoming-${idx}`,
-            title: u.title,
-            thumb: u.thumb,
-            type: (u.type === 'movie' ? 'movie' : 'episode') as 'movie' | 'episode',
-            upcoming: true as const,
-            airDate: u.airDate,
-            subtitle: u.subtitle && u.subtitle !== u.title ? u.subtitle : undefined,
-          }));
-
-        setItems(interleave(library, upcomingItems, 5));
-        setIndex(0);
-      });
-    };
-    load();
-    const id = setInterval(load, 15 * 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  useEffect(() => {
-    if (items.length < 2) return;
-
-    intervalRef.current = setInterval(() => {
-      setVisible(false);
-      timeoutRef.current = setTimeout(() => {
-        setIndex((i) => (i + 1) % items.length);
-        setVisible(true);
-      }, 300);
-    }, intervalMs);
-
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, [items, intervalMs]);
-
-  const current = items[index];
-  const src = current ? posterUrl(current.thumb) : '';
+  const { items, index, setIndex, visible } = useLibrary(intervalMs);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   useEffect(() => {
@@ -142,6 +57,8 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
     return () => clearTimeout(t);
   }, [items.length]);
 
+  const current = items[index];
+  const src = current ? posterUrl(current.thumb) : '';
   const loading = items.length === 0;
 
   return (
@@ -198,7 +115,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         />
       )}
 
-      {/* Nav — top left, fully hidden until hover */}
+      {/* Nav */}
       <div className="absolute top-6 left-8 z-20 flex items-center gap-4">
         <span
           className="text-white/0 text-sm font-bold tracking-[0.4em] uppercase select-none group-hover:text-white/40 transition-all duration-500"

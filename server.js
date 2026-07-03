@@ -165,7 +165,7 @@ function broadcastMode(mode) {
 
 app.post('/api/mode', requireAuth, (req, res) => {
   const { mode } = req.body;
-  if (!['auto', 'ambient', 'coming-soon'].includes(mode)) {
+  if (!['auto', 'ambient', 'poster', 'coming-soon'].includes(mode)) {
     return res.status(400).json({ error: 'Invalid mode' });
   }
   broadcastMode(mode);

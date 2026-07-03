@@ -5,11 +5,12 @@ interface ControlPanelProps {
   currentMode: string | null;
 }
 
-type Mode = 'auto' | 'ambient' | 'coming-soon';
+type Mode = 'auto' | 'ambient' | 'poster' | 'coming-soon';
 
 const MODES: { id: Mode; label: string; description: string }[] = [
   { id: 'auto',        label: 'Auto',        description: 'Now Playing when active, Ambient when idle' },
-  { id: 'ambient',     label: 'Ambient',     description: 'Poster screensaver with clock' },
+  { id: 'ambient',     label: 'Ambient',     description: 'Full-bleed cinematic poster slideshow' },
+  { id: 'poster',      label: 'Poster',      description: 'Framed poster with blurred background' },
   { id: 'coming-soon', label: 'Coming Soon', description: 'Upcoming releases from Sonarr & Radarr' },
 ];
 

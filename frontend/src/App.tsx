@@ -3,6 +3,7 @@ import { useSessions } from './hooks/useSessions';
 import type { DisplayConfig } from './hooks/useWebSocket';
 import NowPlaying from './components/NowPlaying';
 import Ambient from './components/Ambient';
+import Poster from './components/Poster';
 import ComingSoon from './components/ComingSoon';
 import ControlPanel from './components/ControlPanel';
 import SetupPage from './components/SetupPage';
@@ -75,6 +76,10 @@ export default function App() {
 
   if (activeMode === 'ambient') {
     return <Ambient displayConfig={displayConfig} />;
+  }
+
+  if (activeMode === 'poster') {
+    return <Poster displayConfig={displayConfig} />;
   }
 
   return (
