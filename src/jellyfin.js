@@ -74,7 +74,7 @@ export class Jellyfin {
     try {
       const data = await this.fetch(
         `/Items?Recursive=true&IncludeItemTypes=Movie,Series` +
-        `&Fields=PrimaryImageAspectRatio&Limit=500&SortBy=Random`
+        `&Fields=PrimaryImageAspectRatio,Tagline,OfficialRating,CommunityRating,Studios,RunTimeTicks&Limit=500&SortBy=Random`
       );
       return (data.Items || []).slice(0, limit).map((item) => ({
         id: `jf-${item.Id}`,
@@ -82,6 +82,11 @@ export class Jellyfin {
         thumb: `/api/jfimage?id=${item.Id}&type=Primary`,
         type: item.Type === 'Movie' ? 'movie' : 'show',
         year: item.ProductionYear,
+        tagline: item.Tagline || '',
+        contentRating: item.OfficialRating || '',
+        rating: item.CommunityRating ? Math.round(item.CommunityRating * 10) : undefined,
+        studio: item.Studios?.[0]?.Name || '',
+        runtime: item.RunTimeTicks ? Math.round(item.RunTimeTicks / 600_000_000) : undefined,
       }));
     } catch (err) {
       console.error('[jellyfin] getLibraryItems error:', err.message);
@@ -94,7 +99,7 @@ export class Jellyfin {
     try {
       const data = await this.fetch(
         `/Items?Recursive=true&IncludeItemTypes=Movie,Series` +
-        `&Fields=PrimaryImageAspectRatio&Limit=${limit}` +
+        `&Fields=PrimaryImageAspectRatio,Tagline,OfficialRating,CommunityRating,Studios,RunTimeTicks&Limit=${limit}` +
         `&SortBy=DateCreated&SortOrder=Descending`
       );
       const seenThumbs = new Set();
@@ -105,6 +110,11 @@ export class Jellyfin {
           thumb: `/api/jfimage?id=${item.Id}&type=Primary`,
           type: item.Type === 'Movie' ? 'movie' : 'show',
           year: item.ProductionYear,
+          tagline: item.Tagline || '',
+          contentRating: item.OfficialRating || '',
+          rating: item.CommunityRating ? Math.round(item.CommunityRating * 10) : undefined,
+          studio: item.Studios?.[0]?.Name || '',
+          runtime: item.RunTimeTicks ? Math.round(item.RunTimeTicks / 600_000_000) : undefined,
         }))
         .filter((item) => {
           if (seenThumbs.has(item.thumb)) return false;

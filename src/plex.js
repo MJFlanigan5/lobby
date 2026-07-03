@@ -105,6 +105,11 @@ export class Plex {
             thumb: item.thumb,
             type: lib.type,
             year: item.year,
+            tagline: item.tagline || '',
+            contentRating: item.contentRating || '',
+            rating: item.audienceRating ? Math.round(item.audienceRating * 10) : undefined,
+            studio: item.studio || '',
+            runtime: item.duration ? Math.round(item.duration / 60000) : undefined,
           })));
         } catch {
           // skip failed library
@@ -142,6 +147,11 @@ export class Plex {
               : item.thumb,
             type: lib.type,
             year: item.year,
+            tagline: item.tagline || '',
+            contentRating: item.contentRating || '',
+            rating: item.audienceRating ? Math.round(item.audienceRating * 10) : undefined,
+            studio: item.studio || '',
+            runtime: item.duration ? Math.round(item.duration / 60000) : undefined,
           })));
         } catch {
           // skip failed library
