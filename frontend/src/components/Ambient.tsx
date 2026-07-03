@@ -22,6 +22,7 @@ function formatAirDate(dateStr: string) {
 
 function interleave(library: LibraryItem[], upcoming: LibraryItem[], every = 5): LibraryItem[] {
   if (!upcoming.length) return library;
+  if (!library.length) return upcoming;
   const result: LibraryItem[] = [];
   let slot = 0;
   for (let i = 0; i < library.length; i++) {
@@ -31,6 +32,8 @@ function interleave(library: LibraryItem[], upcoming: LibraryItem[], every = 5):
       slot++;
     }
   }
+  // Library smaller than `every` — append upcoming so they're not silently dropped
+  if (slot === 0) result.push(...upcoming);
   return result;
 }
 

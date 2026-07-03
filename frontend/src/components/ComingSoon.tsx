@@ -57,7 +57,13 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
                 src={item.thumb}
                 alt={item.title}
                 className="w-full aspect-[2/3] object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                onError={(e) => {
+                  const img = e.target as HTMLImageElement;
+                  img.style.display = 'none';
+                  const placeholder = document.createElement('div');
+                  placeholder.className = 'w-full aspect-[2/3] bg-[#1a1a1a]';
+                  img.parentNode?.insertBefore(placeholder, img);
+                }}
               />
             ) : (
               <div className="w-full aspect-[2/3] bg-[#1a1a1a]" />
