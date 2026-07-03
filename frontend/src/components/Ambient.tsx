@@ -187,7 +187,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
           <p className="text-white/55 text-base mt-2 tracking-widest uppercase drop-shadow font-light">
             {[current.year ? `Released ${current.year}` : null, current.type === 'show' ? 'TV Series' : 'Movie'].filter(Boolean).join(' · ')}
           </p>
-          {(current.contentRating || current.studio || current.runtime !== undefined || current.rating !== undefined) && (
+          {(current.contentRating || current.studio || current.runtime || current.rating) && (
             <div className="flex items-center gap-3 mt-2.5 flex-wrap">
               {current.contentRating && (
                 <span className="text-xs font-semibold tracking-widest bg-black/50 text-white/60 px-2 py-0.5 rounded-sm">
@@ -197,10 +197,10 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
               {current.studio && (
                 <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.studio}</span>
               )}
-              {current.runtime !== undefined && (
+              {!!current.runtime && (
                 <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.runtime}m</span>
               )}
-              {current.rating !== undefined && (
+              {!!current.rating && (
                 <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.rating}%</span>
               )}
             </div>

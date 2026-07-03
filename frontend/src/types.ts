@@ -22,7 +22,6 @@ export interface LibraryItem {
   thumb: string;
   type: 'movie' | 'show';
   year?: number;
-  tagline?: string;
   contentRating?: string;
   rating?: number;
   studio?: string;
