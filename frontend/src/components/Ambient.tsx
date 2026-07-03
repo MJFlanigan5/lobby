@@ -101,7 +101,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   const loading = items.length === 0;
 
   return (
-    <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a]">
+    <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a] group">
       {loading && !loadTimedOut && (
         <div
           className="absolute inset-0"
@@ -155,7 +155,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       )}
 
       {/* Nav — top left, fully hidden until hover */}
-      <div className="absolute top-6 left-8 z-20 flex items-center gap-4 group">
+      <div className="absolute top-6 left-8 z-20 flex items-center gap-4">
         <span
           className="text-white/0 text-sm font-bold tracking-[0.4em] uppercase select-none group-hover:text-white/40 transition-all duration-500"
         >
