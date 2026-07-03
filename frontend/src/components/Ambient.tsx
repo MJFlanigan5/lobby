@@ -5,8 +5,33 @@ import Weather from './Weather';
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
-  if (thumb.startsWith('/api/')) return thumb; // Jellyfin paths are already routable
+  if (thumb.startsWith('/api/')) return thumb; // Jellyfin
+  if (thumb.startsWith('http://') || thumb.startsWith('https://')) return thumb; // Radarr/Sonarr remote URLs
   return `/api/poster?path=${encodeURIComponent(thumb)}`;
+}
+
+function formatAirDate(dateStr: string) {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const diffDays = Math.round((d.getTime() - Date.now()) / 86_400_000);
+  if (diffDays <= 0) return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays < 7) return d.toLocaleDateString([], { weekday: 'long' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+function interleave(library: LibraryItem[], upcoming: LibraryItem[], every = 5): LibraryItem[] {
+  if (!upcoming.length) return library;
+  const result: LibraryItem[] = [];
+  let slot = 0;
+  for (let i = 0; i < library.length; i++) {
+    result.push(library[i]);
+    if ((i + 1) % every === 0) {
+      result.push(upcoming[slot % upcoming.length]);
+      slot++;
+    }
+  }
+  return result;
 }
 
 function Clock({ format }: { format: string }) {
@@ -48,21 +73,37 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       Promise.all([
         fetch('/api/library/recent?limit=30').then((r) => r.json()).catch(() => ({ items: [] })),
         fetch('/api/library/random?limit=50').then((r) => r.json()).catch(() => ({ items: [] })),
-      ]).then(([recent, random]) => {
+        fetch('/api/upcoming').then((r) => r.json()).catch(() => ({ upcoming: [] })),
+      ]).then(([recent, random, upcomingData]) => {
+        // Deduplicate and merge library items
         const seen = new Set<string>();
-        const merged: LibraryItem[] = [];
+        const library: LibraryItem[] = [];
         for (const item of [...(recent.items || []), ...(random.items || [])]) {
           if (!seen.has(item.id)) {
             seen.add(item.id);
-            merged.push(item);
+            library.push(item);
           }
         }
-        // Shuffle so the slideshow order is random each load/refresh
-        for (let i = merged.length - 1; i > 0; i--) {
+        // Shuffle library
+        for (let i = library.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
-          [merged[i], merged[j]] = [merged[j], merged[i]];
+          [library[i], library[j]] = [library[j], library[i]];
         }
-        setItems(merged);
+
+        // Convert upcoming items to LibraryItem shape, skip those with no poster
+        const upcomingItems: LibraryItem[] = (upcomingData.upcoming || [])
+          .filter((u: { thumb?: string }) => !!u.thumb)
+          .map((u: { title: string; subtitle?: string; airDate?: string; thumb: string; type: string }, idx: number) => ({
+            id: `upcoming-${idx}`,
+            title: u.title,
+            thumb: u.thumb,
+            type: (u.type === 'movie' ? 'movie' : 'episode') as 'movie' | 'episode',
+            upcoming: true as const,
+            airDate: u.airDate,
+            subtitle: u.subtitle && u.subtitle !== u.title ? u.subtitle : undefined,
+          }));
+
+        setItems(interleave(library, upcomingItems, 5));
         setIndex(0);
       });
     };
@@ -185,26 +226,48 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
             {current.title}
           </p>
           <p className="text-white/55 text-base mt-2 tracking-widest uppercase drop-shadow font-light">
-            {[current.year ? `Released ${current.year}` : null, current.type === 'show' ? 'TV Series' : 'Movie'].filter(Boolean).join(' · ')}
+            {current.upcoming
+              ? [
+                  current.subtitle || null,
+                  current.type === 'episode' ? 'New Episode' : 'New Release',
+                ].filter(Boolean).join(' · ')
+              : [
+                  current.year ? `Released ${current.year}` : null,
+                  current.type === 'show' ? 'TV Series' : 'Movie',
+                ].filter(Boolean).join(' · ')
+            }
           </p>
-          {(current.contentRating || current.studio || current.runtime || current.rating) && (
-            <div className="flex items-center gap-3 mt-2.5 flex-wrap">
-              {current.contentRating && (
-                <span className="text-xs font-semibold tracking-widest bg-black/50 text-white/60 px-2 py-0.5 rounded-sm">
-                  {current.contentRating}
+          <div className="flex items-center gap-3 mt-2.5 flex-wrap">
+            {current.upcoming ? (
+              <>
+                <span className="text-xs font-semibold tracking-widest bg-amber-500/90 text-black px-2 py-0.5 rounded-sm">
+                  COMING SOON
                 </span>
-              )}
-              {current.studio && (
-                <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.studio}</span>
-              )}
-              {!!current.runtime && (
-                <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.runtime}m</span>
-              )}
-              {!!current.rating && (
-                <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.rating}%</span>
-              )}
-            </div>
-          )}
+                {current.airDate && (
+                  <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">
+                    {formatAirDate(current.airDate)}
+                  </span>
+                )}
+              </>
+            ) : (
+              <>
+                {current.contentRating && (
+                  <span className="text-xs font-semibold tracking-widest bg-black/50 text-white/60 px-2 py-0.5 rounded-sm">
+                    {current.contentRating}
+                  </span>
+                )}
+                {current.studio && (
+                  <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.studio}</span>
+                )}
+                {!!current.runtime && (
+                  <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.runtime}m</span>
+                )}
+                {!!current.rating && (
+                  <span className="text-xs text-white/35 tracking-widest uppercase font-light drop-shadow">{current.rating}%</span>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
 

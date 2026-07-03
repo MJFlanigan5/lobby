@@ -20,12 +20,16 @@ export interface LibraryItem {
   id: string;
   title: string;
   thumb: string;
-  type: 'movie' | 'show';
+  type: 'movie' | 'show' | 'episode';
   year?: number;
   contentRating?: string;
   rating?: number;
   studio?: string;
   runtime?: number;
+  // upcoming items only
+  upcoming?: boolean;
+  airDate?: string;
+  subtitle?: string;
 }
 
 export interface UpcomingItem {
