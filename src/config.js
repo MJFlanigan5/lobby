@@ -7,6 +7,7 @@ const CONFIG_DIR = path.join(ROOT, 'config');
 const CONFIG_PATH = path.join(CONFIG_DIR, 'settings.json');
 
 const KEYS = [
+  'LOBBY_PIN',
   'PLEX_URL', 'PLEX_TOKEN',
   'JELLYFIN_URL', 'JELLYFIN_API_KEY',
   'SONARR_URL', 'SONARR_API_KEY',

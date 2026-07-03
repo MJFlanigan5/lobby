@@ -72,6 +72,20 @@ app.use('/api/poster', posterRoute(plex));
 app.use('/api/jfimage', jellyfinImageRoute(jellyfin));
 app.use('/api/weather', weatherRoute());
 
+app.get('/api/auth/required', (_req, res) => {
+  const { LOBBY_PIN } = getConfig();
+  res.json({ required: !!LOBBY_PIN });
+});
+
+app.post('/api/auth/verify', async (req, res) => {
+  const { LOBBY_PIN } = getConfig();
+  if (!LOBBY_PIN) return res.json({ ok: true });
+  const { pin } = req.body;
+  if (pin && pin === LOBBY_PIN) return res.json({ ok: true });
+  await new Promise((r) => setTimeout(r, 300));
+  res.status(401).json({ ok: false });
+});
+
 app.get('/api/health', (_req, res) => {
   const c = getConfig();
   res.json({

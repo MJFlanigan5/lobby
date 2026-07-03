@@ -6,6 +6,7 @@ import Ambient from './components/Ambient';
 import ComingSoon from './components/ComingSoon';
 import ControlPanel from './components/ControlPanel';
 import SetupPage from './components/SetupPage';
+import PinGate from './components/PinGate';
 
 const DEFAULT_DISPLAY: DisplayConfig = {
   SLIDESHOW_INTERVAL: '20',
@@ -58,14 +59,14 @@ export default function App() {
   }, [urlPage]);
 
   if (urlPage === 'control') {
-    return <ControlPanel currentMode={activeMode} />;
+    return <PinGate><ControlPanel currentMode={activeMode} /></PinGate>;
   }
 
   // Hold render until health check resolves (prevents flicker to main display on first run)
   if (unconfigured === null && !urlPage) return null;
 
   if (urlPage === 'setup' || unconfigured) {
-    return <SetupPage firstRun={!!unconfigured && urlPage !== 'setup'} />;
+    return <PinGate><SetupPage firstRun={!!unconfigured && urlPage !== 'setup'} /></PinGate>;
   }
 
   if (activeMode === 'coming-soon') {
