@@ -95,6 +95,12 @@ function requireAuth(req, res, next) {
   res.status(401).json({ error: 'Unauthorized' });
 }
 
+app.get('/api/auth/check', (req, res) => {
+  const { LOBBY_PIN } = getConfig();
+  if (!LOBBY_PIN) return res.json({ valid: true });
+  res.json({ valid: req.headers['x-lobby-token'] === SESSION_TOKEN });
+});
+
 app.get('/api/health', (_req, res) => {
   const c = getConfig();
   res.json({

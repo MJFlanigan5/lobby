@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
-import { setAuthToken } from '../authToken';
+import { getAuthToken, setAuthToken } from '../authToken';
 
 const SESSION_KEY = 'lobby_authed';
 
@@ -13,10 +13,29 @@ export default function PinGate({ children }: { children: ReactNode }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (sessionStorage.getItem(SESSION_KEY)) {
-      setStatus('unlocked');
+    const authed = sessionStorage.getItem(SESSION_KEY);
+    const token = getAuthToken();
+
+    if (authed && token) {
+      // Validate stored token — catches server restarts that regenerate SESSION_TOKEN
+      fetch('/api/auth/check', { headers: { 'X-Lobby-Token': token } })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.valid) {
+            setStatus('unlocked');
+          } else {
+            sessionStorage.removeItem(SESSION_KEY);
+            return fetch('/api/auth/required')
+              .then((r) => r.json())
+              .then((r2) => setStatus(r2.required ? 'locked' : 'open'));
+          }
+        })
+        .catch(() => setStatus('open'));
       return;
     }
+
+    if (authed) sessionStorage.removeItem(SESSION_KEY); // authed flag with no token — clear it
+
     fetch('/api/auth/required')
       .then((r) => r.json())
       .then((d) => setStatus(d.required ? 'locked' : 'open'))
