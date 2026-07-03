@@ -75,7 +75,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
     const load = () => {
       Promise.all([
         fetch('/api/library/recent?limit=30').then((r) => r.json()).catch(() => ({ items: [] })),
-        fetch('/api/library/random?limit=50').then((r) => r.json()).catch(() => ({ items: [] })),
+        fetch('/api/library/random?limit=100').then((r) => r.json()).catch(() => ({ items: [] })),
         fetch('/api/upcoming').then((r) => r.json()).catch(() => ({ upcoming: [] })),
       ]).then(([recent, random, upcomingData]) => {
         // Deduplicate and merge library items

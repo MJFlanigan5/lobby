@@ -29,7 +29,7 @@ export default function libraryRoute(plex, jellyfin) {
   }
 
   router.get('/random', async (req, res) => {
-    const limit = Math.min(parseInt(req.query.limit || '12', 10), 50);
+    const limit = Math.min(parseInt(req.query.limit || '12', 10), 100);
     const half = Math.ceil(limit / 2);
     const [plexItems, jfItems] = await Promise.all([
       plex.getLibraryItems(half),
