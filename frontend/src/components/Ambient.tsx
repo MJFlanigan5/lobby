@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import { useLibrary } from '../hooks/useLibrary';
 import Weather from './Weather';
@@ -50,6 +50,18 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
 
   const { items, index, setIndex, visible } = useLibrary(intervalMs);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
+  const kbRef = useRef<HTMLDivElement>(null);
+
+  // Restart Ken Burns animation when slide changes.
+  // Fires while the image is near-opacity-0 (just as fade-in begins),
+  // so the scale reset from 1.08→1.0 is invisible to the viewer.
+  useEffect(() => {
+    const el = kbRef.current;
+    if (!el) return;
+    el.style.animationName = 'none';
+    void el.offsetHeight; // force reflow
+    el.style.animationName = '';
+  }, [index]);
 
   useEffect(() => {
     if (items.length > 0) return;
@@ -81,7 +93,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       )}
       {src && (
         <div
-          key={index}
+          ref={kbRef}
           className="absolute inset-0 ken-burns"
           style={{ willChange: 'transform', animationDuration: `${intervalMs / 1000}s` }}
         >
