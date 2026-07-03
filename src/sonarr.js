@@ -17,7 +17,8 @@ export async function getSonarrUpcoming() {
       title: ep.series?.title || ep.title || 'Unknown',
       subtitle: ep.title || '',
       airDate: ep.airDateUtc || ep.airDate,
-      thumb: ep.series?.remotePoster || '',
+      thumb: ep.series?.remotePoster ||
+        ep.series?.images?.find((i) => i.coverType === 'poster')?.remoteUrl || '',
       type: 'episode',
     }));
   } catch (err) {

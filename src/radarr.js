@@ -16,7 +16,8 @@ export async function getRadarrUpcoming() {
     return items.map((movie) => ({
       title: movie.title || 'Unknown',
       airDate: movie.digitalRelease || movie.physicalRelease || movie.inCinemas,
-      thumb: movie.remotePoster || '',
+      thumb: movie.remotePoster ||
+        movie.images?.find((i) => i.coverType === 'poster')?.remoteUrl || '',
       type: 'movie',
     }));
   } catch (err) {
