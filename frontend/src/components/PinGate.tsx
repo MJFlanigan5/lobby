@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { setAuthToken } from '../authToken';
 
 const SESSION_KEY = 'lobby_authed';
 
@@ -37,7 +38,9 @@ export default function PinGate({ children }: { children: ReactNode }) {
         body: JSON.stringify({ pin }),
       });
       if (r.ok) {
+        const data = await r.json();
         sessionStorage.setItem(SESSION_KEY, '1');
+        if (data.token) setAuthToken(data.token);
         setStatus('unlocked');
       } else {
         setError(true);

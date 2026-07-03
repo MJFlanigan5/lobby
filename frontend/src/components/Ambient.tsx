@@ -164,7 +164,7 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
       )}
       {src && (
         <div
-          key={src}
+          key={index}
           className="absolute inset-0 ken-burns"
           style={{ willChange: 'transform', animationDuration: `${intervalMs / 1000}s` }}
         >

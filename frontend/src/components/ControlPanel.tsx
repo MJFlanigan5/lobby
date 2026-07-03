@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { getAuthToken } from '../authToken';
 
 interface ControlPanelProps {
   currentMode: string | null;
@@ -25,7 +26,7 @@ export default function ControlPanel({ currentMode }: ControlPanelProps) {
     try {
       const res = await fetch('/api/mode', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Lobby-Token': getAuthToken() },
         body: JSON.stringify({ mode }),
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);

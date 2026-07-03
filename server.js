@@ -4,6 +4,7 @@ import { WebSocketServer } from 'ws';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { randomBytes } from 'crypto';
 import { Plex } from './src/plex.js';
 import { Jellyfin } from './src/jellyfin.js';
 import { GoveeSync } from './src/govee.js';
@@ -18,6 +19,7 @@ import jellyfinImageRoute from './src/routes/jellyfinImage.js';
 import weatherRoute from './src/routes/weather.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SESSION_TOKEN = randomBytes(32).toString('hex');
 
 const DAY_TO_DOW = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
@@ -79,12 +81,19 @@ app.get('/api/auth/required', (_req, res) => {
 
 app.post('/api/auth/verify', async (req, res) => {
   const { LOBBY_PIN } = getConfig();
-  if (!LOBBY_PIN) return res.json({ ok: true });
+  if (!LOBBY_PIN) return res.json({ ok: true, token: SESSION_TOKEN });
   const { pin } = req.body;
-  if (pin && pin === LOBBY_PIN) return res.json({ ok: true });
+  if (pin && pin === LOBBY_PIN) return res.json({ ok: true, token: SESSION_TOKEN });
   await new Promise((r) => setTimeout(r, 300));
   res.status(401).json({ ok: false });
 });
+
+function requireAuth(req, res, next) {
+  const { LOBBY_PIN } = getConfig();
+  if (!LOBBY_PIN) return next();
+  if (req.headers['x-lobby-token'] === SESSION_TOKEN) return next();
+  res.status(401).json({ error: 'Unauthorized' });
+}
 
 app.get('/api/health', (_req, res) => {
   const c = getConfig();
@@ -154,7 +163,7 @@ function broadcastMode(mode) {
   }
 }
 
-app.post('/api/mode', (req, res) => {
+app.post('/api/mode', requireAuth, (req, res) => {
   const { mode } = req.body;
   if (!['auto', 'ambient', 'coming-soon'].includes(mode)) {
     return res.status(400).json({ error: 'Invalid mode' });
@@ -188,6 +197,7 @@ app.get('/api/config', (_req, res) => {
     SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
     // secrets: presence only
+    LOBBY_PIN_SET: !!c.LOBBY_PIN,
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
     JELLYFIN_API_KEY_SET: !!c.JELLYFIN_API_KEY,
     SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
@@ -195,8 +205,9 @@ app.get('/api/config', (_req, res) => {
   });
 });
 
-app.post('/api/config', async (req, res) => {
+app.post('/api/config', requireAuth, async (req, res) => {
   const ALLOWED = [
+    'LOBBY_PIN',
     'PLEX_URL', 'PLEX_TOKEN',
     'JELLYFIN_URL', 'JELLYFIN_API_KEY',
     'SONARR_URL', 'SONARR_API_KEY',

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { getAuthToken } from '../authToken';
 
 interface ConfigState {
+  LOBBY_PIN_SET: boolean;
   PLEX_URL: string;
   PLEX_TOKEN_SET: boolean;
   JELLYFIN_URL: string;
@@ -211,6 +213,7 @@ async function geocodeLocation(name: string): Promise<{ lat: string; lon: string
 
 export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) {
   const [form, setForm] = useState({
+    LOBBY_PIN: '',
     PLEX_URL: '', PLEX_TOKEN: '',
     JELLYFIN_URL: '', JELLYFIN_API_KEY: '',
     SONARR_URL: '', SONARR_API_KEY: '',
@@ -362,7 +365,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     setSaveError('');
     setGeoError('');
     try {
-      const SECRETS = new Set(['PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
+      const SECRETS = new Set(['LOBBY_PIN', 'PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
         if (SECRETS.has(k) && !v && !toRemove.has(k)) continue;
@@ -386,7 +389,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
       }
       const res = await fetch('/api/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Lobby-Token': getAuthToken() },
         body: JSON.stringify(payload),
       });
       if (res.ok) {
@@ -679,6 +682,21 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
                 ))}
               </div>
             </div>
+          </Section>
+
+          <Section title="Access PIN (optional)">
+            <p className="text-white/30 text-xs leading-relaxed">
+              Requires a PIN before opening Setup or Control pages. Protects against unauthorized changes
+              if Lobby is exposed over the internet (e.g. via Cloudflare Tunnel).
+            </p>
+            <Field
+              label={status.LOBBY_PIN_SET ? 'PIN (set — enter new value to change)' : 'PIN'}
+              id="lobby-pin"
+              type="password"
+              value={form.LOBBY_PIN}
+              placeholder={status.LOBBY_PIN_SET ? 'Leave blank to keep current PIN' : 'Set a numeric or text PIN'}
+              onChange={set('LOBBY_PIN')}
+            />
           </Section>
 
           <Section title="Auto-Schedule (optional)">
