@@ -25,7 +25,7 @@ export default function weatherRoute() {
       const url =
         `https://api.open-meteo.com/v1/forecast` +
         `?latitude=${LATITUDE}&longitude=${LONGITUDE}` +
-        `&current=temperature_2m,weathercode` +
+        `&current=temperature_2m,weather_code` +
         `&temperature_unit=${unit}&timezone=auto`;
 
       const r = await fetch(url);
@@ -35,7 +35,7 @@ export default function weatherRoute() {
       const result = {
         temp: Math.round(data.current.temperature_2m),
         unit: unit === 'fahrenheit' ? 'F' : 'C',
-        code: data.current.weathercode,
+        code: data.current.weather_code ?? data.current.weathercode,
       };
 
       cache = result;

@@ -92,14 +92,12 @@ export class Plex {
       const libs = await this.getLibraries();
       if (!libs.length) return [];
 
-      const allItems = [];
-      for (const lib of libs) {
+      const results = await Promise.all(libs.map(async (lib) => {
         try {
           const data = await this.fetch(
-            `/library/sections/${lib.key}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=500`
+            `/library/sections/${lib.key}/all?X-Plex-Container-Start=0&X-Plex-Container-Size=500&sort=random`
           );
-          const items = data?.MediaContainer?.Metadata ?? [];
-          allItems.push(...items.map((item) => ({
+          return (data?.MediaContainer?.Metadata ?? []).map((item) => ({
             id: item.ratingKey,
             title: item.title,
             thumb: item.thumb,
@@ -109,11 +107,12 @@ export class Plex {
             rating: item.audienceRating ? Math.round(item.audienceRating * 10) : undefined,
             studio: item.studio || '',
             runtime: item.duration ? Math.round(item.duration / 60000) : undefined,
-          })));
+          }));
         } catch {
-          // skip failed library
+          return [];
         }
-      }
+      }));
+      const allItems = results.flat();
 
       // Fisher-Yates shuffle and take limit
       for (let i = allItems.length - 1; i > 0; i--) {
@@ -131,14 +130,12 @@ export class Plex {
     if (!this.baseUrl || !this.token) return [];
     try {
       const libs = await this.getLibraries();
-      const allItems = [];
-      for (const lib of libs) {
+      const results = await Promise.all(libs.map(async (lib) => {
         try {
           const data = await this.fetch(
             `/library/sections/${lib.key}/recentlyAdded?X-Plex-Container-Start=0&X-Plex-Container-Size=${limit}`
           );
-          const items = data?.MediaContainer?.Metadata ?? [];
-          allItems.push(...items.map((item) => ({
+          return (data?.MediaContainer?.Metadata ?? []).map((item) => ({
             id: item.ratingKey,
             title: item.type === 'episode' ? item.grandparentTitle || item.title : item.title,
             thumb: item.type === 'episode'
@@ -150,11 +147,12 @@ export class Plex {
             rating: item.audienceRating ? Math.round(item.audienceRating * 10) : undefined,
             studio: item.studio || '',
             runtime: item.duration ? Math.round(item.duration / 60000) : undefined,
-          })));
+          }));
         } catch {
-          // skip failed library
+          return [];
         }
-      }
+      }));
+      const allItems = results.flat();
       // Deduplicate by thumb — same show poster from multiple episodes = one entry
       const seenThumbs = new Set();
       const deduped = allItems.filter((item) => {

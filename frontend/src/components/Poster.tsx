@@ -66,7 +66,6 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
       {/* Blurred background — same image, zoomed + blurred to fill 16:9 */}
       {src && (
         <img
-          key={`bg-${index}`}
           src={src}
           alt=""
           aria-hidden="true"
@@ -112,7 +111,6 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
                 </span>
               )}
               <img
-                key={`poster-${index}`}
                 src={src}
                 alt={current?.title ?? ''}
                 className="aspect-[2/3] object-cover rounded-sm shadow-2xl"

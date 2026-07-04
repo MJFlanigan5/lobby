@@ -49,7 +49,10 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
         </div>
       </div>
 
-      <div className="grid grid-cols-6 gap-4 flex-1 min-h-0 overflow-hidden content-start">
+      <div
+        className="grid gap-4 flex-1 min-h-0 overflow-hidden content-start"
+        style={{ gridTemplateColumns: `repeat(${Math.min(visible.length, 6)}, minmax(0, 1fr))` }}
+      >
         {visible.map((item, i) => (
           <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in min-h-0">
             {item.thumb ? (

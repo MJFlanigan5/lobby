@@ -54,8 +54,9 @@ export function useLibrary(intervalMs: number) {
             airDate: u.airDate,
             subtitle: u.subtitle && u.subtitle !== u.title ? u.subtitle : undefined,
           }));
-        setItems(interleave(library, upcomingItems, 5));
-        setIndex(0);
+        const merged = interleave(library, upcomingItems, 5);
+        setItems(merged);
+        setIndex((prev) => (merged.length > 0 ? prev % merged.length : 0));
       });
     };
     load();
