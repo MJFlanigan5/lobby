@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import { useLibrary } from '../hooks/useLibrary';
+import { useSessions } from '../hooks/useSessions';
 import Weather from './Weather';
 
 function posterUrl(thumb: string) {
@@ -48,6 +49,9 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
   const showTitles = displayConfig?.SHOW_TITLES !== 'false';
   const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
+  const { sessions } = useSessions();
+  const activeVideoSession = sessions.find((s) => s.type !== 'track');
+
   const { items, index, setIndex, visible } = useLibrary(intervalMs);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
   const kbRef = useRef<HTMLDivElement>(null);
@@ -69,9 +73,13 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
     return () => clearTimeout(t);
   }, [items.length]);
 
-  const current = items[index];
-  const src = current ? posterUrl(current.thumb) : '';
-  const loading = items.length === 0;
+  const current = activeVideoSession ? null : items[index];
+  const src = activeVideoSession
+    ? posterUrl(activeVideoSession.art || activeVideoSession.thumb)
+    : current
+    ? posterUrl(current.thumb)
+    : '';
+  const loading = items.length === 0 && !activeVideoSession;
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a] group">
@@ -99,13 +107,13 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         >
           <img
             src={src}
-            alt={current?.title ?? ''}
+            alt={activeVideoSession?.title ?? current?.title ?? ''}
             className="w-full h-full object-cover"
             style={{
-              opacity: visible ? 1 : 0,
-              transition: 'opacity 300ms ease-in-out',
+              opacity: activeVideoSession ? 1 : visible ? 1 : 0,
+              transition: activeVideoSession ? 'none' : 'opacity 300ms ease-in-out',
             }}
-            onError={() => setIndex((i) => (i + 1) % items.length)}
+            onError={() => { if (items.length > 0) setIndex((i) => (i + 1) % items.length); }}
           />
         </div>
       )}
@@ -148,8 +156,26 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
         </a>
       </div>
 
-      {/* Title overlay */}
-      {showTitles && current && (
+      {/* Title overlay — session takes priority over library item */}
+      {showTitles && activeVideoSession && (
+        <div className="absolute bottom-20 left-10 right-10 z-20 pointer-events-none">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-xs font-semibold tracking-widest bg-white/15 text-white/80 px-2 py-0.5 rounded-sm">
+              {activeVideoSession.state === 'paused' ? 'PAUSED' : 'NOW PLAYING'}
+            </span>
+          </div>
+          <p className="text-white text-4xl font-bold leading-tight tracking-tight drop-shadow-lg line-clamp-2">
+            {activeVideoSession.title}
+          </p>
+          <p className="text-white/55 text-base mt-2 tracking-widest uppercase drop-shadow font-light">
+            {[
+              activeVideoSession.subtitle || null,
+              activeVideoSession.year ? String(activeVideoSession.year) : null,
+            ].filter(Boolean).join(' · ')}
+          </p>
+        </div>
+      )}
+      {showTitles && current && !activeVideoSession && (
         <div
           className="absolute bottom-20 left-10 right-10 z-20 pointer-events-none"
           style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease-in-out' }}

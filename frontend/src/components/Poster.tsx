@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import { useLibrary } from '../hooks/useLibrary';
+import { useSessions } from '../hooks/useSessions';
 import Weather from './Weather';
 
 function posterUrl(thumb: string) {
@@ -48,18 +49,25 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
   const showTitles = displayConfig?.SHOW_TITLES !== 'false';
   const displayName = displayConfig?.DISPLAY_NAME || 'LOBBY';
 
+  const { sessions } = useSessions();
+  const activeVideoSession = sessions.find((s) => s.type !== 'track');
+
   const { items, index, setIndex, visible } = useLibrary(intervalMs);
   const [loadTimedOut, setLoadTimedOut] = useState(false);
 
   useEffect(() => {
-    if (items.length > 0) return;
+    if (items.length > 0 || activeVideoSession) return;
     const t = setTimeout(() => setLoadTimedOut(true), 8000);
     return () => clearTimeout(t);
-  }, [items.length]);
+  }, [items.length, activeVideoSession]);
 
-  const current = items[index];
-  const src = current ? posterUrl(current.thumb) : '';
-  const loading = items.length === 0;
+  const current = activeVideoSession ? null : items[index];
+  const src = activeVideoSession
+    ? posterUrl(activeVideoSession.thumb)
+    : current
+    ? posterUrl(current.thumb)
+    : '';
+  const loading = items.length === 0 && !activeVideoSession;
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a] group">
@@ -112,15 +120,31 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
               )}
               <img
                 src={src}
-                alt={current?.title ?? ''}
+                alt={activeVideoSession?.title ?? current?.title ?? ''}
                 className="aspect-[2/3] object-cover rounded-sm shadow-2xl"
                 style={{ height: 'min(76vh, 540px)' }}
-                onError={() => setIndex((i) => (i + 1) % items.length)}
+                onError={() => { if (items.length > 0) setIndex((i) => (i + 1) % items.length); }}
               />
             </div>
           )}
 
-          {showTitles && current && (
+          {showTitles && activeVideoSession && (
+            <div className="text-center max-w-sm">
+              <p className="text-white text-xl font-bold tracking-tight leading-snug">
+                {activeVideoSession.title}
+              </p>
+              <p className="text-white/40 text-xs mt-1.5 tracking-widest uppercase font-light">
+                {[
+                  activeVideoSession.subtitle || null,
+                  activeVideoSession.year ? String(activeVideoSession.year) : null,
+                ].filter(Boolean).join(' · ')}
+              </p>
+              <span className="inline-block mt-2 text-xs font-semibold tracking-widest bg-white/10 text-white/60 px-2 py-0.5 rounded-sm">
+                {activeVideoSession.state === 'paused' ? 'PAUSED' : 'NOW PLAYING'}
+              </span>
+            </div>
+          )}
+          {showTitles && current && !activeVideoSession && (
             <div className="text-center max-w-sm">
               <p className="text-white text-xl font-bold tracking-tight leading-snug">
                 {current.title}
