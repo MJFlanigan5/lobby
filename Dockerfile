@@ -7,7 +7,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Production server
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 
 COPY package*.json ./
