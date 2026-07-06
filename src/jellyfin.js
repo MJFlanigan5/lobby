@@ -12,7 +12,7 @@ export class Jellyfin {
     const sep = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${sep}api_key=${this.apiKey}`;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10_000);
+    const timer = setTimeout(() => controller.abort(), 30_000);
     try {
       const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
       if (!res.ok) throw new Error(`Jellyfin ${path} → ${res.status}`);
