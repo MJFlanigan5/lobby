@@ -28,7 +28,14 @@ export default function weatherRoute() {
         `&current=temperature_2m,weather_code` +
         `&temperature_unit=${unit}&timezone=auto`;
 
-      const r = await fetch(url);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10_000);
+      let r;
+      try {
+        r = await fetch(url, { signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
       if (!r.ok) throw new Error(`Open-Meteo ${r.status}`);
       const data = await r.json();
 

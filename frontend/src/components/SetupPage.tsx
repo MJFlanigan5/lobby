@@ -714,7 +714,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
               form={form}
               set={set}
             />
-            <p className="text-white/20 text-xs">Applied on next container start.</p>
+            <p className="text-white/20 text-xs">Takes effect at the next scheduled cron tick after saving.</p>
           </Section>
 
           <button

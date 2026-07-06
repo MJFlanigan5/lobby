@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { UpcomingItem } from '../types';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import Ambient from './Ambient';
@@ -11,6 +11,10 @@ function formatDate(dateStr?: string) {
 
 export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayConfig }) {
   const [items, setItems] = useState<UpcomingItem[] | null>(null);
+  const [brokenThumbs, setBrokenThumbs] = useState<Set<string>>(new Set());
+  const onThumbError = useCallback((src: string) => {
+    setBrokenThumbs((prev) => new Set(prev).add(src));
+  }, []);
 
   const load = () => {
     fetch('/api/upcoming')
@@ -55,18 +59,12 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
       >
         {visible.map((item, i) => (
           <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in min-h-0">
-            {item.thumb ? (
+            {item.thumb && !brokenThumbs.has(item.thumb) ? (
               <img
                 src={item.thumb}
                 alt={item.title}
                 className="w-full aspect-[2/3] object-cover"
-                onError={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  img.style.display = 'none';
-                  const placeholder = document.createElement('div');
-                  placeholder.className = 'w-full aspect-[2/3] bg-[#1a1a1a]';
-                  img.parentNode?.insertBefore(placeholder, img);
-                }}
+                onError={() => onThumbError(item.thumb!)}
               />
             ) : (
               <div className="w-full aspect-[2/3] bg-[#1a1a1a]" />

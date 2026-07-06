@@ -7,10 +7,13 @@ export async function getSonarrUpcoming() {
   try {
     const start = new Date().toISOString().split('T')[0];
     const end = new Date(Date.now() + 14 * 86400_000).toISOString().split('T')[0];
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
     const res = await fetch(
       `${url.replace(/\/$/, '')}/api/v3/calendar?start=${start}&end=${end}`,
-      { headers: { 'X-Api-Key': key } }
+      { headers: { 'X-Api-Key': key }, signal: controller.signal }
     );
+    clearTimeout(timer);
     if (!res.ok) return [];
     const items = await res.json();
     return items.map((ep) => ({

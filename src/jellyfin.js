@@ -11,9 +11,15 @@ export class Jellyfin {
   async fetch(path) {
     const sep = path.includes('?') ? '&' : '?';
     const url = `${this.baseUrl}${path}${sep}api_key=${this.apiKey}`;
-    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!res.ok) throw new Error(`Jellyfin ${path} → ${res.status}`);
-    return res.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
+      if (!res.ok) throw new Error(`Jellyfin ${path} → ${res.status}`);
+      return res.json();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async getSessions() {

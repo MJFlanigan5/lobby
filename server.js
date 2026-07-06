@@ -243,7 +243,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/api/config/test', async (req, res) => {
+app.post('/api/config/test', requireAuth, async (req, res) => {
   const c = getConfig();
   const url = req.body.PLEX_URL || c.PLEX_URL;
   const token = req.body.PLEX_TOKEN || c.PLEX_TOKEN;
@@ -259,7 +259,7 @@ app.post('/api/config/test', async (req, res) => {
   }
 });
 
-app.post('/api/config/test/sonarr', async (req, res) => {
+app.post('/api/config/test/sonarr', requireAuth, async (req, res) => {
   const c = getConfig();
   const url = req.body.SONARR_URL || c.SONARR_URL;
   const key = req.body.SONARR_API_KEY || c.SONARR_API_KEY;
@@ -277,7 +277,7 @@ app.post('/api/config/test/sonarr', async (req, res) => {
   }
 });
 
-app.post('/api/config/test/radarr', async (req, res) => {
+app.post('/api/config/test/radarr', requireAuth, async (req, res) => {
   const c = getConfig();
   const url = req.body.RADARR_URL || c.RADARR_URL;
   const key = req.body.RADARR_API_KEY || c.RADARR_API_KEY;
@@ -295,7 +295,7 @@ app.post('/api/config/test/radarr', async (req, res) => {
   }
 });
 
-app.post('/api/config/test/jellyfin', async (req, res) => {
+app.post('/api/config/test/jellyfin', requireAuth, async (req, res) => {
   const c = getConfig();
   const url = req.body.JELLYFIN_URL || c.JELLYFIN_URL;
   const key = req.body.JELLYFIN_API_KEY || c.JELLYFIN_API_KEY;

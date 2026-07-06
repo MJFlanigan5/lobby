@@ -25,9 +25,10 @@ export default function PinGate({ children }: { children: ReactNode }) {
             setStatus('unlocked');
           } else {
             sessionStorage.removeItem(SESSION_KEY);
-            return fetch('/api/auth/required')
+            fetch('/api/auth/required')
               .then((r) => r.json())
-              .then((r2) => setStatus(r2.required ? 'locked' : 'open'));
+              .then((r2) => setStatus(r2.required ? 'locked' : 'open'))
+              .catch(() => setStatus('open'));
           }
         })
         .catch(() => setStatus('open'));

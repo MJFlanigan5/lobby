@@ -21,11 +21,16 @@ const KEYS = [
   'SHOW_WEATHER', 'SHOW_CLOCK', 'SHOW_TITLES', 'DISPLAY_NAME',
 ];
 
+let _cache = null;
+
 function readFile() {
+  if (_cache) return _cache;
   try {
-    return JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    _cache = JSON.parse(readFileSync(CONFIG_PATH, 'utf8'));
+    return _cache;
   } catch {
-    return {};
+    _cache = {};
+    return _cache;
   }
 }
 
@@ -40,6 +45,7 @@ export function getConfig() {
 
 export function saveConfig(settings) {
   mkdirSync(CONFIG_DIR, { recursive: true });
-  const current = readFile();
-  writeFileSync(CONFIG_PATH, JSON.stringify({ ...current, ...settings }, null, 2));
+  const merged = { ...readFile(), ...settings };
+  writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2));
+  _cache = merged;
 }

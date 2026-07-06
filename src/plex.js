@@ -13,9 +13,15 @@ export class Plex {
 
   async fetch(path) {
     const url = `${this.baseUrl}${path}`;
-    const res = await fetch(url, { headers: this.headers });
-    if (!res.ok) throw new Error(`Plex ${path} → ${res.status}`);
-    return res.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    try {
+      const res = await fetch(url, { headers: this.headers, signal: controller.signal });
+      if (!res.ok) throw new Error(`Plex ${path} → ${res.status}`);
+      return res.json();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   async getSessions() {
@@ -41,7 +47,7 @@ export class Plex {
         const isEpisode = item.type === 'episode';
 
         return {
-          id: session.id || item.sessionKey || String(Math.random()),
+          id: session.id || item.sessionKey || `${item.ratingKey}-${user.id || user.title || 'anon'}`,
           type: item.type,
           title: isEpisode
             ? (item.grandparentTitle || item.title)
