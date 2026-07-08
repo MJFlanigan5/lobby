@@ -47,6 +47,14 @@ export class Jellyfin {
             ? `/api/jfimage?id=${artId}&type=Backdrop`
             : '';
 
+          const streams = item.MediaStreams || [];
+          const videoStream = streams.find((st) => st.Type === 'Video');
+          const audioStream = streams.find((st) => st.Type === 'Audio');
+          const height = videoStream?.Height || 0;
+          const resolution = height >= 2160 ? '4K' : height >= 1080 ? '1080p' : height >= 720 ? '720p' : null;
+          const atmosTitle = audioStream?.DisplayTitle || '';
+          const atmos = atmosTitle.toLowerCase().includes('atmos');
+
           return {
             id: `jf-${s.Id}`,
             type: isAudio ? 'track' : isEpisode ? 'episode' : 'movie',
@@ -67,6 +75,9 @@ export class Jellyfin {
             state: s.PlayState?.IsPaused ? 'paused' : 'playing',
             quality: s.PlayState?.PlayMethod === 'Transcode' ? 'transcode' : 'direct',
             player: s.DeviceName || s.Client || 'Unknown',
+            resolution,
+            atmos,
+            contentRating: item.OfficialRating || null,
           };
         });
     } catch (err) {

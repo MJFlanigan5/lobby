@@ -46,6 +46,17 @@ export class Plex {
         const isTrack = item.type === 'track';
         const isEpisode = item.type === 'episode';
 
+        const videoRes = stream?.videoResolution || '';
+        const resolution = videoRes === '4k' || videoRes === '2160' ? '4K'
+          : videoRes === '1080' ? '1080p'
+          : videoRes === '720' ? '720p'
+          : null;
+        const audioStreams = (part?.Stream || []).filter((st) => st.streamType === '2' || st.codec);
+        const atmos = audioStreams.some((st) =>
+          (st.displayTitle || '').toLowerCase().includes('atmos') ||
+          (st.extendedDisplayTitle || '').toLowerCase().includes('atmos')
+        );
+
         return {
           id: session.id || item.sessionKey || `${item.ratingKey}-${user.id || user.title || 'anon'}`,
           type: item.type,
@@ -72,6 +83,9 @@ export class Plex {
           state: player.state || 'playing',
           quality: isTranscode ? 'transcode' : 'direct',
           player: player.title || player.device || 'Unknown',
+          resolution,
+          atmos,
+          contentRating: item.contentRating || null,
         };
       });
     } catch (err) {

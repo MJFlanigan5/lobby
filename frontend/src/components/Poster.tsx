@@ -100,7 +100,7 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
           )}
 
           {showTitles && activeVideoSession && (
-            <div className="text-center max-w-sm">
+            <div className="text-center w-full" style={{ maxWidth: 'min(360px, 80vw)' }}>
               <p className="text-white text-xl font-bold tracking-tight leading-snug">
                 {activeVideoSession.title}
               </p>
@@ -110,9 +110,54 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
                   activeVideoSession.year ? String(activeVideoSession.year) : null,
                 ].filter(Boolean).join(' · ')}
               </p>
-              <span className="inline-block mt-2 text-xs font-semibold tracking-widest bg-white/10 text-white/60 px-2 py-0.5 rounded-sm">
-                {activeVideoSession.state === 'paused' ? 'PAUSED' : 'NOW PLAYING'}
-              </span>
+
+              {/* Progress bar */}
+              {activeVideoSession.duration > 0 && (
+                <div className="mt-3">
+                  <div className="h-[2px] w-full bg-white/15 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-white/70 rounded-full transition-all duration-1000"
+                      style={{ width: `${activeVideoSession.progress}%` }}
+                    />
+                  </div>
+                  {activeVideoSession.state === 'playing' && (
+                    <p className="mt-1 text-[10px] text-white/25 text-right tabular-nums tracking-wider">
+                      ends {new Date(Date.now() + Math.max(0, activeVideoSession.duration - activeVideoSession.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Metadata badges */}
+              <div className="flex items-center gap-1.5 flex-wrap justify-center mt-3">
+                {activeVideoSession.state === 'paused' && (
+                  <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
+                    PAUSED
+                  </span>
+                )}
+                {activeVideoSession.contentRating && (
+                  <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
+                    {activeVideoSession.contentRating}
+                  </span>
+                )}
+                {activeVideoSession.resolution && (
+                  <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
+                    {activeVideoSession.resolution}
+                  </span>
+                )}
+                {activeVideoSession.atmos && (
+                  <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
+                    ATMOS
+                  </span>
+                )}
+                {activeVideoSession.duration > 0 && (
+                  <span className="text-xs text-white/30 tracking-widest">
+                    {Math.round(activeVideoSession.duration / 60000)}m
+                  </span>
+                )}
+                <span className="text-xs text-white/30 tracking-widest">{activeVideoSession.username}</span>
+                <span className="text-xs text-white/20 tracking-widest">{activeVideoSession.player}</span>
+              </div>
             </div>
           )}
           {showTitles && current && !activeVideoSession && (

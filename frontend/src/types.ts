@@ -14,6 +14,9 @@ export interface Session {
   state: 'playing' | 'paused' | 'buffering';
   quality: 'direct' | 'transcode';
   player: string;
+  resolution?: string | null;
+  atmos?: boolean;
+  contentRating?: string | null;
 }
 
 export interface LibraryItem {
