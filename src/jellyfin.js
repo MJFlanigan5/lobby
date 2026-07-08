@@ -133,15 +133,19 @@ export class Jellyfin {
 
   async proxyImage(itemId, type = 'Primary') {
     if (!this.configured) return null;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30_000);
     try {
       const url = `${this.baseUrl}/Items/${itemId}/Images/${type}?api_key=${this.apiKey}&maxWidth=1000&quality=90`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) return null;
       const buffer = Buffer.from(await res.arrayBuffer());
       const contentType = res.headers.get('content-type') || 'image/jpeg';
       return { buffer, contentType };
     } catch {
       return null;
+    } finally {
+      clearTimeout(timer);
     }
   }
 }

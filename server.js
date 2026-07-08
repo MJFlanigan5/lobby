@@ -266,14 +266,19 @@ app.post('/api/config/test/sonarr', requireAuth, async (req, res) => {
   if (!url || !key) {
     return res.status(400).json({ error: 'SONARR_URL and SONARR_API_KEY required' });
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
   try {
     const r = await fetch(`${url.replace(/\/$/, '')}/api/v3/system/status`, {
       headers: { 'X-Api-Key': key },
+      signal: controller.signal,
     });
     if (!r.ok) throw new Error(`Status ${r.status}`);
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Connection failed' });
+  } finally {
+    clearTimeout(timer);
   }
 });
 
@@ -284,14 +289,19 @@ app.post('/api/config/test/radarr', requireAuth, async (req, res) => {
   if (!url || !key) {
     return res.status(400).json({ error: 'RADARR_URL and RADARR_API_KEY required' });
   }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
   try {
     const r = await fetch(`${url.replace(/\/$/, '')}/api/v3/system/status`, {
       headers: { 'X-Api-Key': key },
+      signal: controller.signal,
     });
     if (!r.ok) throw new Error(`Status ${r.status}`);
     res.json({ ok: true });
   } catch (e) {
     res.status(400).json({ error: e.message || 'Connection failed' });
+  } finally {
+    clearTimeout(timer);
   }
 });
 
