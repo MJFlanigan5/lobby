@@ -51,7 +51,7 @@ export class Plex {
           : videoRes === '1080' ? '1080p'
           : videoRes === '720' ? '720p'
           : null;
-        const audioStreams = (part?.Stream || []).filter((st) => st.streamType === '2' || st.codec);
+        const audioStreams = (part?.Stream || []).filter((st) => st.streamType === 2);
         const atmos = audioStreams.some((st) =>
           (st.displayTitle || '').toLowerCase().includes('atmos') ||
           (st.extendedDisplayTitle || '').toLowerCase().includes('atmos')

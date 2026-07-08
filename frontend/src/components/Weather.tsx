@@ -9,7 +9,6 @@ interface WeatherData {
 function wmoCondition(code: number): string {
   if (code === 0) return 'Clear';
   if (code <= 3) return code === 1 ? 'Mostly Clear' : code === 2 ? 'Partly Cloudy' : 'Overcast';
-  if (code <= 44) return 'Drizzle';
   if (code <= 48) return 'Fog';
   if (code <= 55) return 'Drizzle';
   if (code <= 65) return 'Rain';
