@@ -45,8 +45,8 @@ export default function SessionCard({ session, size }: SessionCardProps) {
         }}
       />
 
-      {/* Quality badge — top left */}
-      <div className="absolute top-4 left-4 z-20">
+      {/* Quality / spec badges — top left */}
+      <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 flex-wrap">
         <span
           className={`text-xs font-semibold tracking-widest px-2 py-1 rounded-sm ${
             session.quality === 'direct'
@@ -56,6 +56,16 @@ export default function SessionCard({ session, size }: SessionCardProps) {
         >
           {session.quality === 'direct' ? 'DIRECT' : 'TRANSCODE'}
         </span>
+        {session.resolution && (
+          <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-black/50 text-white/80">
+            {session.resolution}
+          </span>
+        )}
+        {session.atmos && (
+          <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-black/50 text-white/80">
+            ATMOS
+          </span>
+        )}
       </div>
 
       {/* Username badge — top right */}
