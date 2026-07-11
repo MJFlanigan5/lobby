@@ -22,6 +22,7 @@ services:
       - LONGITUDE=${LONGITUDE:-}
       - LOCATION=${LOCATION:-}
       - TEMP_UNIT=${TEMP_UNIT:-fahrenheit}
+      - TIMEZONE=${TIMEZONE:-America/New_York}
       - SCHEDULE_CS_DAY=${SCHEDULE_CS_DAY:-}
       - SCHEDULE_CS_HOUR=${SCHEDULE_CS_HOUR:-18}
       - SCHEDULE_AUTO_DAY=${SCHEDULE_AUTO_DAY:-}

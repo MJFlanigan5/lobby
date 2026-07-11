@@ -79,6 +79,7 @@ Credential changes (Plex token, Jellyfin API key, etc.) apply immediately after 
 
 | Variable | Description |
 |---|---|
+| `TIMEZONE` | IANA timezone (e.g. `America/Chicago`) — controls what hour the schedule below actually fires at. Configurable in the setup UI. |
 | `SCHEDULE_CS_DAY` | Day to switch to Coming Soon: `monday`–`sunday`, `weekdays`, `weekends`, `daily` |
 | `SCHEDULE_CS_HOUR` | Hour (0–23) to switch to Coming Soon (default: `18`) |
 | `SCHEDULE_AUTO_DAY` | Day to switch back to Auto |

@@ -16,6 +16,7 @@ interface ConfigState {
   LATITUDE: string;
   LONGITUDE: string;
   TEMP_UNIT: string;
+  TIMEZONE: string;
   SCHEDULE_CS_DAY: string;
   SCHEDULE_CS_HOUR: string;
   SCHEDULE_AUTO_DAY: string;
@@ -220,6 +221,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     RADARR_URL: '', RADARR_API_KEY: '',
     GOVEE_IP: '', GOVEE_DEVICE_ID: '',
     LOCATION: '', LATITUDE: '', LONGITUDE: '', TEMP_UNIT: 'fahrenheit',
+    TIMEZONE: 'America/New_York',
     SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
     SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
     SLIDESHOW_INTERVAL: '20',
@@ -252,7 +254,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
   };
 
   useEffect(() => {
-    fetch('/api/config')
+    fetch('/api/config', { headers: { 'X-Lobby-Token': getAuthToken() } })
       .then((r) => r.json())
       .then((d) => {
         setStatus(d);
@@ -268,6 +270,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           LATITUDE: d.LATITUDE || '',
           LONGITUDE: d.LONGITUDE || '',
           TEMP_UNIT: d.TEMP_UNIT || 'fahrenheit',
+          TIMEZONE: d.TIMEZONE || 'America/New_York',
           SCHEDULE_CS_DAY: d.SCHEDULE_CS_DAY || '',
           SCHEDULE_CS_HOUR: d.SCHEDULE_CS_HOUR || '18',
           SCHEDULE_AUTO_DAY: d.SCHEDULE_AUTO_DAY || '',
@@ -700,6 +703,36 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           </Section>
 
           <Section title="Auto-Schedule (optional)">
+            <div>
+              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Timezone</p>
+              <select
+                value={form.TIMEZONE}
+                onChange={(e) => set('TIMEZONE')(e.target.value)}
+                className={selectClass}
+              >
+                <optgroup label="US & Canada">
+                  <option value="America/New_York">Eastern (New York)</option>
+                  <option value="America/Chicago">Central (Chicago)</option>
+                  <option value="America/Denver">Mountain (Denver)</option>
+                  <option value="America/Phoenix">Mountain, no DST (Phoenix)</option>
+                  <option value="America/Los_Angeles">Pacific (Los Angeles)</option>
+                  <option value="America/Anchorage">Alaska (Anchorage)</option>
+                  <option value="Pacific/Honolulu">Hawaii (Honolulu)</option>
+                </optgroup>
+                <optgroup label="Other">
+                  <option value="America/Sao_Paulo">Brasília</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris / Berlin</option>
+                  <option value="Asia/Dubai">Dubai</option>
+                  <option value="Asia/Kolkata">India</option>
+                  <option value="Asia/Singapore">Singapore</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="Australia/Sydney">Sydney</option>
+                  <option value="UTC">UTC</option>
+                </optgroup>
+              </select>
+              <p className="text-white/20 text-xs mt-2">Controls what hour the schedule below actually fires at.</p>
+            </div>
             <ScheduleRow
               label="Switch to Coming Soon"
               dayKey="SCHEDULE_CS_DAY"

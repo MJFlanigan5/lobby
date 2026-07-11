@@ -1,10 +1,9 @@
 import express from 'express';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'crypto';
 import { Plex } from './src/plex.js';
 import { Jellyfin } from './src/jellyfin.js';
 import { GoveeSync } from './src/govee.js';
@@ -55,7 +54,6 @@ let csTask = null;
 let autoTask = null;
 
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 async function getCurrentSessions() {
@@ -79,11 +77,36 @@ app.get('/api/auth/required', (_req, res) => {
   res.json({ required: !!LOBBY_PIN });
 });
 
+function safeEqual(a, b) {
+  const ha = createHash('sha256').update(String(a)).digest();
+  const hb = createHash('sha256').update(String(b)).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+// Per-IP lockout on repeated bad PINs — a 4-6 digit PIN has a small keyspace
+// and the artificial delay alone doesn't stop parallel brute-force attempts.
+const AUTH_MAX_ATTEMPTS = 5;
+const AUTH_LOCKOUT_MS = 5 * 60 * 1000;
+const _authAttempts = new Map(); // ip -> { count, lockedUntil }
+
 app.post('/api/auth/verify', async (req, res) => {
   const { LOBBY_PIN } = getConfig();
   if (!LOBBY_PIN) return res.json({ ok: true, token: SESSION_TOKEN });
+
+  const ip = req.ip;
+  const entry = _authAttempts.get(ip);
+  if (entry?.lockedUntil > Date.now()) {
+    return res.status(429).json({ ok: false, error: 'Too many attempts — try again later' });
+  }
+
   const { pin } = req.body;
-  if (pin && pin === LOBBY_PIN) return res.json({ ok: true, token: SESSION_TOKEN });
+  if (pin && safeEqual(pin, LOBBY_PIN)) {
+    _authAttempts.delete(ip);
+    return res.json({ ok: true, token: SESSION_TOKEN });
+  }
+
+  const count = (entry?.count || 0) + 1;
+  _authAttempts.set(ip, { count, lockedUntil: count >= AUTH_MAX_ATTEMPTS ? Date.now() + AUTH_LOCKOUT_MS : null });
   await new Promise((r) => setTimeout(r, 300));
   res.status(401).json({ ok: false });
 });
@@ -147,16 +170,17 @@ function broadcastDisplayConfig() {
 function initSchedules() {
   if (csTask) { csTask.stop(); csTask = null; }
   if (autoTask) { autoTask.stop(); autoTask = null; }
-  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR } = getConfig();
+  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR, TIMEZONE } = getConfig();
+  const timezone = TIMEZONE || 'America/New_York';
   const csCron = buildCron(SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR);
   const autoCron = buildCron(SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR);
   if (csCron) {
-    csTask = cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); });
-    log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR}`);
+    csTask = cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); }, { timezone });
+    log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR} (${timezone})`);
   }
   if (autoCron) {
-    autoTask = cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); });
-    log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR}`);
+    autoTask = cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); }, { timezone });
+    log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR} (${timezone})`);
   }
 }
 
@@ -178,7 +202,7 @@ app.post('/api/mode', requireAuth, (req, res) => {
   res.json({ ok: true, mode });
 });
 
-app.get('/api/config', (_req, res) => {
+app.get('/api/config', requireAuth, (_req, res) => {
   const c = getConfig();
   res.json({
     PLEX_URL: c.PLEX_URL,
@@ -191,6 +215,7 @@ app.get('/api/config', (_req, res) => {
     LATITUDE: c.LATITUDE,
     LONGITUDE: c.LONGITUDE,
     TEMP_UNIT: c.TEMP_UNIT || 'fahrenheit',
+    TIMEZONE: c.TIMEZONE || 'America/New_York',
     SCHEDULE_CS_DAY: c.SCHEDULE_CS_DAY,
     SCHEDULE_CS_HOUR: c.SCHEDULE_CS_HOUR || '18',
     SCHEDULE_AUTO_DAY: c.SCHEDULE_AUTO_DAY,
@@ -219,7 +244,7 @@ app.post('/api/config', requireAuth, async (req, res) => {
     'SONARR_URL', 'SONARR_API_KEY',
     'RADARR_URL', 'RADARR_API_KEY',
     'GOVEE_IP', 'GOVEE_DEVICE_ID',
-    'LOCATION', 'LATITUDE', 'LONGITUDE', 'TEMP_UNIT',
+    'LOCATION', 'LATITUDE', 'LONGITUDE', 'TEMP_UNIT', 'TIMEZONE',
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
     'SLIDESHOW_INTERVAL', 'CLOCK_FORMAT', 'LIBRARY_FILTER',
