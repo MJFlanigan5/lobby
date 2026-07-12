@@ -39,7 +39,8 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   // full list so a later item backfills the slot instead of leaving an empty card.
   const validItems = items.filter((item) => item.thumb && !brokenThumbs.has(item.thumb));
   if (validItems.length === 0) return <Ambient displayConfig={displayConfig} />;
-  const visible = validItems.slice(0, 6);
+  const hero = validItems.slice(0, 6);
+  const rest = validItems.slice(6, 6 + 12);
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">
@@ -58,10 +59,10 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
       </div>
 
       <div
-        className="grid gap-4 flex-1 min-h-0 overflow-hidden content-start"
-        style={{ gridTemplateColumns: `repeat(${Math.min(visible.length, 6)}, minmax(0, 1fr))` }}
+        className="grid gap-4 shrink-0 content-start"
+        style={{ gridTemplateColumns: `repeat(${Math.min(hero.length, 6)}, minmax(0, 1fr))` }}
       >
-        {visible.map((item, i) => (
+        {hero.map((item, i) => (
           <div key={`${item.title}-${i}`} className="bg-[#111] overflow-hidden fade-in min-h-0">
             {item.thumb && !brokenThumbs.has(item.thumb) ? (
               <img
@@ -88,6 +89,35 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
           </div>
         ))}
       </div>
+
+      {rest.length > 0 && (
+        <div className="flex-1 min-h-0 overflow-hidden mt-6 flex flex-col gap-1.5">
+          {rest.map((item, i) => (
+            <div key={`${item.title}-list-${i}`} className="flex items-center gap-3 fade-in shrink-0">
+              {item.thumb && !brokenThumbs.has(item.thumb) ? (
+                <img
+                  src={item.thumb}
+                  alt={item.title}
+                  className="w-8 aspect-[2/3] object-cover rounded-sm shrink-0"
+                  onError={() => onThumbError(item.thumb!)}
+                />
+              ) : (
+                <div className="w-8 aspect-[2/3] bg-[#1a1a1a] rounded-sm shrink-0" />
+              )}
+              <span className={`text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded-sm shrink-0 ${
+                item.type === 'movie' ? 'bg-blue-900/60 text-blue-300' : 'bg-purple-900/60 text-purple-300'
+              }`}>
+                {item.type === 'movie' ? 'MOVIE' : 'EPISODE'}
+              </span>
+              <p className="flex-1 min-w-0 truncate text-sm">
+                <span className="text-white/70 font-medium">{item.title}</span>
+                {item.subtitle && <span className="text-gray-600"> — {item.subtitle}</span>}
+              </p>
+              <span className="text-xs text-gray-500 ml-auto shrink-0">{formatDate(item.airDate)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
