@@ -40,7 +40,9 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   const validItems = items.filter((item) => item.thumb && !brokenThumbs.has(item.thumb));
   if (validItems.length === 0) return <Ambient displayConfig={displayConfig} />;
   const hero = validItems.slice(0, 6);
-  const rest = validItems.slice(6, 6 + 12);
+  // Rough estimate for a 1080p-ish display — not measured against real rendered
+  // height, so this errs conservative rather than risking clipped rows at the bottom.
+  const rest = validItems.slice(6, 6 + 8);
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">
