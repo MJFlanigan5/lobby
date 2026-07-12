@@ -16,6 +16,7 @@ import libraryRoute from './src/routes/library.js';
 import posterRoute from './src/routes/poster.js';
 import jellyfinImageRoute from './src/routes/jellyfinImage.js';
 import weatherRoute from './src/routes/weather.js';
+import themeRoute from './src/routes/theme.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SESSION_TOKEN = randomBytes(32).toString('hex');
@@ -52,6 +53,8 @@ let lastGoveeThumb = null;
 let currentMode = getConfig().CURRENT_MODE || 'auto';
 let csTask = null;
 let autoTask = null;
+let sleepTask = null;
+let wakeTask = null;
 
 const app = express();
 app.use(express.json());
@@ -71,6 +74,7 @@ app.use('/api/library', libraryRoute(plex, jellyfin));
 app.use('/api/poster', posterRoute(plex));
 app.use('/api/jfimage', jellyfinImageRoute(jellyfin));
 app.use('/api/weather', weatherRoute());
+app.use('/api/theme', themeRoute(plex));
 
 app.get('/api/auth/required', (_req, res) => {
   const { LOBBY_PIN } = getConfig();
@@ -140,6 +144,7 @@ app.get('/api/health', (_req, res) => {
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
     SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
+    THEME_MUSIC_ENABLED: c.THEME_MUSIC_ENABLED || 'false',
   });
 });
 
@@ -157,6 +162,7 @@ function getDisplayConfig() {
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
     SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
+    THEME_MUSIC_ENABLED: c.THEME_MUSIC_ENABLED || 'false',
   };
 }
 
@@ -170,10 +176,18 @@ function broadcastDisplayConfig() {
 function initSchedules() {
   if (csTask) { csTask.stop(); csTask = null; }
   if (autoTask) { autoTask.stop(); autoTask = null; }
-  const { SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR, TIMEZONE } = getConfig();
+  if (sleepTask) { sleepTask.stop(); sleepTask = null; }
+  if (wakeTask) { wakeTask.stop(); wakeTask = null; }
+  const {
+    SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR, SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR,
+    SCHEDULE_SLEEP_DAY, SCHEDULE_SLEEP_HOUR, SCHEDULE_WAKE_DAY, SCHEDULE_WAKE_HOUR,
+    TIMEZONE,
+  } = getConfig();
   const timezone = TIMEZONE || 'America/New_York';
   const csCron = buildCron(SCHEDULE_CS_DAY, SCHEDULE_CS_HOUR);
   const autoCron = buildCron(SCHEDULE_AUTO_DAY, SCHEDULE_AUTO_HOUR);
+  const sleepCron = buildCron(SCHEDULE_SLEEP_DAY, SCHEDULE_SLEEP_HOUR);
+  const wakeCron = buildCron(SCHEDULE_WAKE_DAY, SCHEDULE_WAKE_HOUR);
   if (csCron) {
     csTask = cron.schedule(csCron, () => { log.info('Schedule: → coming-soon'); broadcastMode('coming-soon'); }, { timezone });
     log.info(`Schedule: coming-soon every ${SCHEDULE_CS_DAY} at hour ${SCHEDULE_CS_HOUR} (${timezone})`);
@@ -181,6 +195,14 @@ function initSchedules() {
   if (autoCron) {
     autoTask = cron.schedule(autoCron, () => { log.info('Schedule: → auto'); broadcastMode('auto'); }, { timezone });
     log.info(`Schedule: auto every ${SCHEDULE_AUTO_DAY} at hour ${SCHEDULE_AUTO_HOUR} (${timezone})`);
+  }
+  if (sleepCron) {
+    sleepTask = cron.schedule(sleepCron, () => { log.info('Schedule: → sleep'); broadcastMode('sleep'); }, { timezone });
+    log.info(`Schedule: sleep every ${SCHEDULE_SLEEP_DAY} at hour ${SCHEDULE_SLEEP_HOUR} (${timezone})`);
+  }
+  if (wakeCron) {
+    wakeTask = cron.schedule(wakeCron, () => { log.info('Schedule: → wake (auto)'); broadcastMode('auto'); }, { timezone });
+    log.info(`Schedule: wake every ${SCHEDULE_WAKE_DAY} at hour ${SCHEDULE_WAKE_HOUR} (${timezone})`);
   }
 }
 
@@ -195,7 +217,7 @@ function broadcastMode(mode) {
 
 app.post('/api/mode', requireAuth, (req, res) => {
   const { mode } = req.body;
-  if (!['auto', 'ambient', 'poster', 'coming-soon'].includes(mode)) {
+  if (!['auto', 'ambient', 'poster', 'coming-soon', 'sleep'].includes(mode)) {
     return res.status(400).json({ error: 'Invalid mode' });
   }
   broadcastMode(mode);
@@ -220,6 +242,10 @@ app.get('/api/config', requireAuth, (_req, res) => {
     SCHEDULE_CS_HOUR: c.SCHEDULE_CS_HOUR || '18',
     SCHEDULE_AUTO_DAY: c.SCHEDULE_AUTO_DAY,
     SCHEDULE_AUTO_HOUR: c.SCHEDULE_AUTO_HOUR || '6',
+    SCHEDULE_SLEEP_DAY: c.SCHEDULE_SLEEP_DAY,
+    SCHEDULE_SLEEP_HOUR: c.SCHEDULE_SLEEP_HOUR || '23',
+    SCHEDULE_WAKE_DAY: c.SCHEDULE_WAKE_DAY,
+    SCHEDULE_WAKE_HOUR: c.SCHEDULE_WAKE_HOUR || '7',
     SLIDESHOW_INTERVAL: c.SLIDESHOW_INTERVAL || '20',
     CLOCK_FORMAT: c.CLOCK_FORMAT || '12h',
     LIBRARY_FILTER: c.LIBRARY_FILTER || 'all',
@@ -227,6 +253,7 @@ app.get('/api/config', requireAuth, (_req, res) => {
     SHOW_CLOCK: c.SHOW_CLOCK || 'true',
     SHOW_TITLES: c.SHOW_TITLES || 'true',
     DISPLAY_NAME: c.DISPLAY_NAME || 'LOBBY',
+    THEME_MUSIC_ENABLED: c.THEME_MUSIC_ENABLED || 'false',
     // secrets: presence only
     LOBBY_PIN_SET: !!c.LOBBY_PIN,
     PLEX_TOKEN_SET: !!c.PLEX_TOKEN,
@@ -247,8 +274,11 @@ app.post('/api/config', requireAuth, async (req, res) => {
     'LOCATION', 'LATITUDE', 'LONGITUDE', 'TEMP_UNIT', 'TIMEZONE',
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
+    'SCHEDULE_SLEEP_DAY', 'SCHEDULE_SLEEP_HOUR',
+    'SCHEDULE_WAKE_DAY', 'SCHEDULE_WAKE_HOUR',
     'SLIDESHOW_INTERVAL', 'CLOCK_FORMAT', 'LIBRARY_FILTER',
     'SHOW_WEATHER', 'SHOW_CLOCK', 'SHOW_TITLES', 'DISPLAY_NAME',
+    'THEME_MUSIC_ENABLED',
   ];
   const settings = {};
   for (const k of ALLOWED) {
@@ -390,8 +420,9 @@ setInterval(async () => {
     }
   }
 
-  // Govee ambient sync — only fires when the lead session's poster changes
-  if (govee.configured && sessions.length > 0 && sessions[0].thumb) {
+  // Govee ambient sync — only fires when the lead session's poster changes.
+  // Skipped during sleep so the light doesn't keep shifting color on a screen that's off.
+  if (currentMode !== 'sleep' && govee.configured && sessions.length > 0 && sessions[0].thumb) {
     const thumb = sessions[0].thumb;
     if (thumb !== lastGoveeThumb) {
       lastGoveeThumb = thumb;

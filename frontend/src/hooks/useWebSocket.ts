@@ -9,6 +9,7 @@ export interface DisplayConfig {
   SHOW_CLOCK: string;
   SHOW_TITLES: string;
   DISPLAY_NAME: string;
+  THEME_MUSIC_ENABLED: string;
 }
 
 type WsMessage =

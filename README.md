@@ -5,13 +5,21 @@ A cinematic media display app for TV screens. Shows what's currently playing on 
 ## Features
 
 - **Now Playing** — Real-time Plex and Jellyfin session display. Up to 4 simultaneous viewers with widescreen backdrop art and a poster inset. Music sessions get a dedicated layout with album art and animated EQ bars. Mixed music+video sessions split the screen automatically.
+- **Theme music** — Plays the active title's Plex theme song when there's a single Now Playing session. Off by default (Setup → Display → Theme Music). Not every title has a theme; silent when unavailable. Plex only — Jellyfin sessions stay silent.
 - **Ambient** — Full-screen poster screensaver with Ken Burns zoom. Cycles through recently added items first, then random library picks. Shows clock and weather.
 - **Coming Soon** — Upcoming releases pulled from Sonarr and Radarr calendars.
+- **Sleep** — Blanks the poster/slideshow on a schedule (e.g. 11pm–7am) or on demand from the control panel, keeping clock and weather visible (same toggles as Ambient). Software black screen — this deployment has no HDMI-CEC hardware access, so it can't power the physical display off, just blanks it.
 - **Govee sync** — Extracts the dominant color from the active poster and pushes it to a Govee light via LAN UDP.
-- **Auto-schedule** — Switch modes on a schedule (e.g. Coming Soon every Friday evening, Auto every Monday morning). Configured in the setup UI — no cron syntax required.
+- **Auto-schedule** — Switch modes on a schedule (e.g. Coming Soon every Friday evening, Auto every Monday morning, Sleep overnight). Configured in the setup UI — no cron syntax required.
 - **Portrait mode** — Rotate any display 90° for vertically-mounted screens via URL or the control panel.
 - **Control panel** — Push mode changes to all connected screens instantly from your phone.
 - **Setup UI** — Browser-based configuration for all credentials and settings. No SSH required after initial deploy. Credentials apply immediately on save — no container restart needed.
+
+## Not included
+
+Compared against similar apps (e.g. [Posterr](https://github.com/petersem/posterr)) and deliberately left out:
+
+- **Readarr support** — not used in this setup.
 
 ## Install
 
@@ -84,6 +92,16 @@ Credential changes (Plex token, Jellyfin API key, etc.) apply immediately after 
 | `SCHEDULE_CS_HOUR` | Hour (0–23) to switch to Coming Soon (default: `18`) |
 | `SCHEDULE_AUTO_DAY` | Day to switch back to Auto |
 | `SCHEDULE_AUTO_HOUR` | Hour (0–23) to switch back to Auto (default: `6`) |
+| `SCHEDULE_SLEEP_DAY` | Day to switch to Sleep (blank screen) |
+| `SCHEDULE_SLEEP_HOUR` | Hour (0–23) to switch to Sleep (default: `23`) |
+| `SCHEDULE_WAKE_DAY` | Day to wake (switches back to Auto) |
+| `SCHEDULE_WAKE_HOUR` | Hour (0–23) to wake (default: `7`) |
+
+### Theme music
+
+| Variable | Default | Description |
+|---|---|---|
+| `THEME_MUSIC_ENABLED` | `false` | Plays the Plex theme song for a single active Now Playing session |
 
 ## Finding your Plex token
 

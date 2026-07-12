@@ -60,6 +60,8 @@ export class Plex {
         return {
           id: session.id || item.sessionKey || `${item.ratingKey}-${user.id || user.title || 'anon'}`,
           type: item.type,
+          // Theme music lives at the show level, not the episode — grandparentRatingKey for episodes
+          ratingKey: isEpisode ? (item.grandparentRatingKey || item.ratingKey) : item.ratingKey,
           title: isEpisode
             ? (item.grandparentTitle || item.title)
             : item.title,
@@ -195,6 +197,21 @@ export class Plex {
       if (!res.ok) return null;
       const buffer = Buffer.from(await res.arrayBuffer());
       const contentType = res.headers.get('content-type') || 'image/jpeg';
+      return { buffer, contentType };
+    } catch {
+      return null;
+    }
+  }
+
+  // Not every movie/show has a theme track in Plex — a 404 here is normal, not an error.
+  async proxyTheme(ratingKey) {
+    if (!this.baseUrl || !this.token || !ratingKey) return null;
+    try {
+      const url = `${this.baseUrl}/library/metadata/${ratingKey}/theme?X-Plex-Token=${this.token}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const buffer = Buffer.from(await res.arrayBuffer());
+      const contentType = res.headers.get('content-type') || 'audio/mpeg';
       return { buffer, contentType };
     } catch {
       return null;

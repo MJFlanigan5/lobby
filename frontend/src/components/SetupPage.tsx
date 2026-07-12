@@ -21,6 +21,11 @@ interface ConfigState {
   SCHEDULE_CS_HOUR: string;
   SCHEDULE_AUTO_DAY: string;
   SCHEDULE_AUTO_HOUR: string;
+  SCHEDULE_SLEEP_DAY: string;
+  SCHEDULE_SLEEP_HOUR: string;
+  SCHEDULE_WAKE_DAY: string;
+  SCHEDULE_WAKE_HOUR: string;
+  THEME_MUSIC_ENABLED: string;
 }
 
 const DAY_OPTIONS = [
@@ -224,6 +229,8 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     TIMEZONE: 'America/New_York',
     SCHEDULE_CS_DAY: '', SCHEDULE_CS_HOUR: '18',
     SCHEDULE_AUTO_DAY: '', SCHEDULE_AUTO_HOUR: '6',
+    SCHEDULE_SLEEP_DAY: '', SCHEDULE_SLEEP_HOUR: '23',
+    SCHEDULE_WAKE_DAY: '', SCHEDULE_WAKE_HOUR: '7',
     SLIDESHOW_INTERVAL: '20',
     CLOCK_FORMAT: '12h',
     LIBRARY_FILTER: 'all',
@@ -231,6 +238,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     SHOW_CLOCK: 'true',
     SHOW_TITLES: 'true',
     DISPLAY_NAME: 'LOBBY',
+    THEME_MUSIC_ENABLED: 'false',
   });
   const [resolvedLocation, setResolvedLocation] = useState('');
   const [geoError, setGeoError] = useState('');
@@ -275,6 +283,10 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SCHEDULE_CS_HOUR: d.SCHEDULE_CS_HOUR || '18',
           SCHEDULE_AUTO_DAY: d.SCHEDULE_AUTO_DAY || '',
           SCHEDULE_AUTO_HOUR: d.SCHEDULE_AUTO_HOUR || '6',
+          SCHEDULE_SLEEP_DAY: d.SCHEDULE_SLEEP_DAY || '',
+          SCHEDULE_SLEEP_HOUR: d.SCHEDULE_SLEEP_HOUR || '23',
+          SCHEDULE_WAKE_DAY: d.SCHEDULE_WAKE_DAY || '',
+          SCHEDULE_WAKE_HOUR: d.SCHEDULE_WAKE_HOUR || '7',
           SLIDESHOW_INTERVAL: d.SLIDESHOW_INTERVAL || '20',
           CLOCK_FORMAT: d.CLOCK_FORMAT || '12h',
           LIBRARY_FILTER: d.LIBRARY_FILTER || 'all',
@@ -282,6 +294,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
           SHOW_CLOCK: d.SHOW_CLOCK || 'true',
           SHOW_TITLES: d.SHOW_TITLES || 'true',
           DISPLAY_NAME: d.DISPLAY_NAME || 'LOBBY',
+          THEME_MUSIC_ENABLED: d.THEME_MUSIC_ENABLED || 'false',
         }));
         if (d.LOCATION) setResolvedLocation('');
       })
@@ -664,6 +677,26 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
               </div>
             </div>
             <div>
+              <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Theme Music</p>
+              <div className="flex gap-2">
+                {[{ value: 'true', label: 'On' }, { value: 'false', label: 'Off' }].map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => set('THEME_MUSIC_ENABLED')(opt.value)}
+                    className={`flex-1 py-2 text-xs rounded transition-colors ${
+                      form.THEME_MUSIC_ENABLED === opt.value
+                        ? 'bg-white text-black font-semibold'
+                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-white/20 text-xs mt-2">Plays the Plex theme song for a single active Now Playing session. Not every title has one — silent when unavailable. Off by default since it adds audio to a display that's otherwise silent.</p>
+              <p className="text-amber-500/40 text-xs mt-1">Plex only — does not work for Jellyfin sessions.</p>
+            </div>
+            <div>
               <p className="text-xs text-white/40 uppercase tracking-wider mb-2">Library Content</p>
               <div className="flex gap-2 flex-wrap">
                 {[
@@ -747,7 +780,21 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
               form={form}
               set={set}
             />
-            <p className="text-white/20 text-xs">Takes effect at the next scheduled cron tick after saving.</p>
+            <ScheduleRow
+              label="Sleep (blank screen)"
+              dayKey="SCHEDULE_SLEEP_DAY"
+              hourKey="SCHEDULE_SLEEP_HOUR"
+              form={form}
+              set={set}
+            />
+            <ScheduleRow
+              label="Wake (back to Auto)"
+              dayKey="SCHEDULE_WAKE_DAY"
+              hourKey="SCHEDULE_WAKE_HOUR"
+              form={form}
+              set={set}
+            />
+            <p className="text-white/20 text-xs">Takes effect at the next scheduled cron tick after saving. Sleep is a software black screen — this deployment has no HDMI-CEC hardware access, so it can't power the physical display off.</p>
           </Section>
 
           <button

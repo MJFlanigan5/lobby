@@ -8,6 +8,8 @@ import ComingSoon from './components/ComingSoon';
 import ControlPanel from './components/ControlPanel';
 import SetupPage from './components/SetupPage';
 import PinGate from './components/PinGate';
+import Sleep from './components/Sleep';
+import ThemeMusicPlayer from './components/ThemeMusicPlayer';
 
 const DEFAULT_DISPLAY: DisplayConfig = {
   SLIDESHOW_INTERVAL: '20',
@@ -17,6 +19,7 @@ const DEFAULT_DISPLAY: DisplayConfig = {
   SHOW_CLOCK: 'true',
   SHOW_TITLES: 'true',
   DISPLAY_NAME: 'LOBBY',
+  THEME_MUSIC_ENABLED: 'false',
 };
 
 export default function App() {
@@ -70,6 +73,10 @@ export default function App() {
     return <PinGate><SetupPage firstRun={!!unconfigured && urlPage !== 'setup'} /></PinGate>;
   }
 
+  if (activeMode === 'sleep') {
+    return <Sleep displayConfig={displayConfig} />;
+  }
+
   if (activeMode === 'coming-soon') {
     return <ComingSoon displayConfig={displayConfig} />;
   }
@@ -82,6 +89,10 @@ export default function App() {
     return <Poster displayConfig={displayConfig} />;
   }
 
+  // Theme music only for a single active video/episode session — with multiple
+  // simultaneous viewers there's no one "right" theme to play, so stay silent.
+  const soloVideoSession = sessions.length === 1 && sessions[0].type !== 'track' ? sessions[0] : null;
+
   return (
     <div className="w-full h-full bg-[#0a0a0a] relative overflow-hidden grain">
       {!connected && sessions.length === 0 && (
@@ -91,6 +102,10 @@ export default function App() {
           </span>
         </div>
       )}
+      <ThemeMusicPlayer
+        ratingKey={soloVideoSession?.ratingKey}
+        enabled={displayConfig.THEME_MUSIC_ENABLED === 'true'}
+      />
       {sessions.length > 0 ? (
         <NowPlaying sessions={sessions} />
       ) : (
