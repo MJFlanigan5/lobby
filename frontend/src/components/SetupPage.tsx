@@ -693,7 +693,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
                   </button>
                 ))}
               </div>
-              <p className="text-white/20 text-xs mt-2">Plays the Plex theme song for a single active Now Playing session. Not every title has one — silent when unavailable. Off by default since it adds audio to a display that's otherwise silent.</p>
+              <p className="text-white/20 text-xs mt-2">Plays the Plex theme song during the Ambient/Poster library cycle — never during a real Now Playing session, so it doesn't clash with anyone actually watching. Not every title has one — silent when unavailable. Off by default since it adds audio to a display that's otherwise silent.</p>
               <p className="text-amber-500/40 text-xs mt-1">Plex only — does not work for Jellyfin sessions.</p>
             </div>
             <div>

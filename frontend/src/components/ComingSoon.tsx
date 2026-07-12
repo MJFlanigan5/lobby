@@ -35,7 +35,11 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   // No upcoming content — fall back to ambient display
   if (items.length === 0) return <Ambient displayConfig={displayConfig} />;
 
-  const visible = items.slice(0, 6);
+  // Skip items with no poster or a poster that failed to load — pull from the
+  // full list so a later item backfills the slot instead of leaving an empty card.
+  const validItems = items.filter((item) => item.thumb && !brokenThumbs.has(item.thumb));
+  if (validItems.length === 0) return <Ambient displayConfig={displayConfig} />;
+  const visible = validItems.slice(0, 6);
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">

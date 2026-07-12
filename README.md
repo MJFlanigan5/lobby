@@ -5,7 +5,7 @@ A cinematic media display app for TV screens. Shows what's currently playing on 
 ## Features
 
 - **Now Playing** — Real-time Plex and Jellyfin session display. Up to 4 simultaneous viewers with widescreen backdrop art and a poster inset. Music sessions get a dedicated layout with album art and animated EQ bars. Mixed music+video sessions split the screen automatically.
-- **Theme music** — Plays the active title's Plex theme song when there's a single Now Playing session. Off by default (Setup → Display → Theme Music). Not every title has a theme; silent when unavailable. Plex only — Jellyfin sessions stay silent.
+- **Theme music** — Plays the Plex theme song for whatever's currently showcased in the Ambient/Poster screensaver cycle. Only during the library cycle — never during a real Now Playing session, so it doesn't clash with something someone's actually watching in the room. Off by default (Setup → Display → Theme Music). Not every title has a theme; silent when unavailable. Plex only — Jellyfin items stay silent.
 - **Ambient** — Full-screen poster screensaver with Ken Burns zoom. Cycles through recently added items first, then random library picks. Shows clock and weather.
 - **Coming Soon** — Upcoming releases pulled from Sonarr and Radarr calendars.
 - **Sleep** — Blanks the poster/slideshow on a schedule (e.g. 11pm–7am) or on demand from the control panel, keeping clock and weather visible (same toggles as Ambient). Software black screen — this deployment has no HDMI-CEC hardware access, so it can't power the physical display off, just blanks it.
@@ -101,7 +101,7 @@ Credential changes (Plex token, Jellyfin API key, etc.) apply immediately after 
 
 | Variable | Default | Description |
 |---|---|---|
-| `THEME_MUSIC_ENABLED` | `false` | Plays the Plex theme song for a single active Now Playing session |
+| `THEME_MUSIC_ENABLED` | `false` | Plays the Plex theme song during Ambient/Poster's library cycle — never during a real Now Playing session |
 
 ## Finding your Plex token
 

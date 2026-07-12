@@ -4,6 +4,7 @@ import { useLibrary } from '../hooks/useLibrary';
 import { useSessions } from '../hooks/useSessions';
 import Weather from './Weather';
 import { Clock, formatAirDate } from './clockUtils';
+import ThemeMusicPlayer from './ThemeMusicPlayer';
 
 function posterUrl(thumb: string) {
   if (!thumb) return '';
@@ -54,6 +55,13 @@ export default function Ambient({ displayConfig }: { displayConfig?: DisplayConf
 
   return (
     <div className="w-full h-full relative overflow-hidden bg-[#0a0a0a] group">
+      {/* current is null whenever a real session is active — theme music only
+          plays for the cycling library screensaver, never over a real session
+          someone might actually be watching in the room. */}
+      <ThemeMusicPlayer
+        ratingKey={current?.id}
+        enabled={displayConfig?.THEME_MUSIC_ENABLED === 'true'}
+      />
       {loading && !loadTimedOut && (
         <div
           className="absolute inset-0"
