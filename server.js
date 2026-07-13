@@ -7,6 +7,10 @@ import { randomBytes, createHash, timingSafeEqual } from 'crypto';
 import { Plex } from './src/plex.js';
 import { Jellyfin } from './src/jellyfin.js';
 import { GoveeSync } from './src/govee.js';
+import { HomeAssistantLightSync } from './src/haLight.js';
+import { HueSync } from './src/hue.js';
+import { LifxSync } from './src/lifx.js';
+import { SonosDuck } from './src/sonos.js';
 import { extractDominantColor } from './src/colors.js';
 import { getConfig, saveConfig } from './src/config.js';
 import cron from 'node-cron';
@@ -49,7 +53,11 @@ if (!cfg.PLEX_URL || !cfg.PLEX_TOKEN) {
 const plex = new Plex({ plexUrl: cfg.PLEX_URL, plexToken: cfg.PLEX_TOKEN });
 const jellyfin = new Jellyfin({ jellyfinUrl: cfg.JELLYFIN_URL, apiKey: cfg.JELLYFIN_API_KEY });
 const govee = new GoveeSync();
-let lastGoveeThumb = null;
+const haLight = new HomeAssistantLightSync();
+const hue = new HueSync();
+const lifx = new LifxSync();
+const sonos = new SonosDuck();
+let lastLightThumb = null;
 let currentMode = getConfig().CURRENT_MODE || 'auto';
 let csTask = null;
 let autoTask = null;
@@ -75,6 +83,17 @@ app.use('/api/poster', posterRoute(plex));
 app.use('/api/jfimage', jellyfinImageRoute(jellyfin));
 app.use('/api/weather', weatherRoute());
 app.use('/api/theme', themeRoute(plex));
+
+// Called by the display itself when theme music starts/stops — ducks or
+// restores Sonos volume so it doesn't clash with what's on the speakers.
+app.post('/api/theme-music/started', (_req, res) => {
+  sonos.duck().catch((err) => log.error('Sonos duck failed:', err.message));
+  res.json({ ok: true });
+});
+app.post('/api/theme-music/stopped', (_req, res) => {
+  sonos.restore().catch((err) => log.error('Sonos restore failed:', err.message));
+  res.json({ ok: true });
+});
 
 app.get('/api/auth/required', (_req, res) => {
   const { LOBBY_PIN } = getConfig();
@@ -233,6 +252,13 @@ app.get('/api/config', requireAuth, (_req, res) => {
     RADARR_URL: c.RADARR_URL,
     GOVEE_IP: c.GOVEE_IP,
     GOVEE_DEVICE_ID: c.GOVEE_DEVICE_ID,
+    HA_URL: c.HA_URL,
+    HA_LIGHT_ENTITY_ID: c.HA_LIGHT_ENTITY_ID,
+    HUE_BRIDGE_IP: c.HUE_BRIDGE_IP,
+    HUE_LIGHT_ID: c.HUE_LIGHT_ID,
+    LIFX_SELECTOR: c.LIFX_SELECTOR,
+    SONOS_IP: c.SONOS_IP,
+    SONOS_DUCK_VOLUME: c.SONOS_DUCK_VOLUME || '15',
     LOCATION: c.LOCATION,
     LATITUDE: c.LATITUDE,
     LONGITUDE: c.LONGITUDE,
@@ -260,6 +286,9 @@ app.get('/api/config', requireAuth, (_req, res) => {
     JELLYFIN_API_KEY_SET: !!c.JELLYFIN_API_KEY,
     SONARR_API_KEY_SET: !!c.SONARR_API_KEY,
     RADARR_API_KEY_SET: !!c.RADARR_API_KEY,
+    HA_TOKEN_SET: !!c.HA_TOKEN,
+    HUE_USERNAME_SET: !!c.HUE_USERNAME,
+    LIFX_TOKEN_SET: !!c.LIFX_TOKEN,
   });
 });
 
@@ -271,6 +300,10 @@ app.post('/api/config', requireAuth, async (req, res) => {
     'SONARR_URL', 'SONARR_API_KEY',
     'RADARR_URL', 'RADARR_API_KEY',
     'GOVEE_IP', 'GOVEE_DEVICE_ID',
+    'HA_URL', 'HA_TOKEN', 'HA_LIGHT_ENTITY_ID',
+    'HUE_BRIDGE_IP', 'HUE_USERNAME', 'HUE_LIGHT_ID',
+    'LIFX_TOKEN', 'LIFX_SELECTOR',
+    'SONOS_IP', 'SONOS_DUCK_VOLUME',
     'LOCATION', 'LATITUDE', 'LONGITUDE', 'TEMP_UNIT', 'TIMEZONE',
     'SCHEDULE_CS_DAY', 'SCHEDULE_CS_HOUR',
     'SCHEDULE_AUTO_DAY', 'SCHEDULE_AUTO_HOUR',
@@ -420,16 +453,23 @@ setInterval(async () => {
     }
   }
 
-  // Govee ambient sync — only fires when the lead session's poster changes.
-  // Skipped during sleep so the light doesn't keep shifting color on a screen that's off.
-  if (currentMode !== 'sleep' && govee.configured && sessions.length > 0 && sessions[0].thumb) {
+  // Ambient light sync (Govee, Home Assistant, Hue, LIFX) — only fires when
+  // the lead session's poster changes. Skipped during sleep so lights don't
+  // keep shifting color on a screen that's off.
+  if (currentMode !== 'sleep' && sessions.length > 0 && sessions[0].thumb) {
     const thumb = sessions[0].thumb;
-    if (thumb !== lastGoveeThumb) {
-      lastGoveeThumb = thumb;
+    if (thumb !== lastLightThumb && (govee.configured || haLight.configured || hue.configured || lifx.configured)) {
+      lastLightThumb = thumb;
       resolveThumbImage(thumb)
         .then((result) => result ? extractDominantColor(result.buffer) : null)
-        .then((color) => color && govee.setColor(color.r, color.g, color.b))
-        .catch((err) => log.error('Govee sync failed:', err.message));
+        .then((color) => {
+          if (!color) return;
+          govee.setColor(color.r, color.g, color.b).catch((err) => log.error('Govee sync failed:', err.message));
+          haLight.setColor(color.r, color.g, color.b).catch((err) => log.error('HA light sync failed:', err.message));
+          hue.setColor(color.r, color.g, color.b).catch((err) => log.error('Hue sync failed:', err.message));
+          lifx.setColor(color.r, color.g, color.b).catch((err) => log.error('LIFX sync failed:', err.message));
+        })
+        .catch((err) => log.error('Light sync failed:', err.message));
     }
   }
 }, 10_000);
