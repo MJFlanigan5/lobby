@@ -4,6 +4,7 @@ interface WeatherData {
   temp: number;
   unit: string;
   code: number;
+  alert?: { event: string; severity: string } | null;
 }
 
 function wmoCondition(code: number): string {
@@ -41,6 +42,11 @@ export default function Weather() {
         {data.temp}°{data.unit}
       </div>
       <div className="text-white/30 text-sm">{wmoCondition(data.code)}</div>
+      {data.alert && (
+        <div className={`mt-1 text-sm font-medium ${data.alert.severity === 'Moderate' ? 'text-amber-300/90' : 'text-red-400'}`}>
+          ⚠ {data.alert.event}
+        </div>
+      )}
     </div>
   );
 }

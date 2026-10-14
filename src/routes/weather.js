@@ -5,6 +5,28 @@ let cache = null;
 let cacheExpiry = 0;
 let cacheKey = '';
 
+const SEVERITY_RANK = { Extreme: 4, Severe: 3, Moderate: 2 };
+
+// Highest-severity active NWS alert (Moderate or above) for the point, or null.
+// US only; any failure (non-US location, NWS down) just means no alert.
+async function fetchAlert(lat, lon) {
+  try {
+    const r = await fetch(`https://api.weather.gov/alerts/active?point=${lat},${lon}`, {
+      headers: { 'User-Agent': 'lobby (github.com/MJFlanigan5/lobby)', Accept: 'application/geo+json' },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!r.ok) return null;
+    const { features = [] } = await r.json();
+    const top = features
+      .map((f) => f.properties)
+      .filter((p) => SEVERITY_RANK[p.severity])
+      .sort((a, b) => SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity])[0];
+    return top ? { event: top.event, severity: top.severity } : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function weatherRoute() {
   const router = Router();
 
@@ -43,6 +65,7 @@ export default function weatherRoute() {
         temp: Math.round(data.current.temperature_2m),
         unit: unit === 'fahrenheit' ? 'F' : 'C',
         code: data.current.weather_code ?? data.current.weathercode,
+        alert: await fetchAlert(LATITUDE, LONGITUDE),
       };
 
       cache = result;
