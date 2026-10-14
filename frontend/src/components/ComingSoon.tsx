@@ -9,6 +9,13 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
+const typeLabel = (item: UpcomingItem) =>
+  item.source === 'seerr' ? 'REQUESTED' : item.type === 'movie' ? 'MOVIE' : 'EPISODE';
+const typeClass = (item: UpcomingItem) =>
+  item.source === 'seerr' ? 'bg-amber-900/60 text-amber-300'
+    : item.type === 'movie' ? 'bg-blue-900/60 text-blue-300' : 'bg-purple-900/60 text-purple-300';
+const dateLabel = (item: UpcomingItem) => item.statusLabel ?? formatDate(item.airDate);
+
 export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayConfig }) {
   const [items, setItems] = useState<UpcomingItem[] | null>(null);
   const [brokenThumbs, setBrokenThumbs] = useState<Set<string>>(new Set());
@@ -78,12 +85,10 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
             )}
             <div className="p-3">
               <div className="flex items-center justify-between mb-1">
-                <span className={`text-xs font-semibold tracking-wider px-1.5 py-0.5 rounded-sm ${
-                  item.type === 'movie' ? 'bg-blue-900/60 text-blue-300' : 'bg-purple-900/60 text-purple-300'
-                }`}>
-                  {item.type === 'movie' ? 'MOVIE' : 'EPISODE'}
+                <span className={`text-xs font-semibold tracking-wider px-1.5 py-0.5 rounded-sm ${typeClass(item)}`}>
+                  {typeLabel(item)}
                 </span>
-                <span className="text-xs text-gray-500">{formatDate(item.airDate)}</span>
+                <span className="text-xs text-gray-500">{dateLabel(item)}</span>
               </div>
               <p className="text-white text-sm font-semibold leading-tight mt-1">{item.title}</p>
               {item.subtitle && <p className="text-gray-500 text-xs mt-0.5">{item.subtitle}</p>}
@@ -106,16 +111,14 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
               ) : (
                 <div className="w-8 aspect-[2/3] bg-[#1a1a1a] rounded-sm shrink-0" />
               )}
-              <span className={`text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded-sm shrink-0 ${
-                item.type === 'movie' ? 'bg-blue-900/60 text-blue-300' : 'bg-purple-900/60 text-purple-300'
-              }`}>
-                {item.type === 'movie' ? 'MOVIE' : 'EPISODE'}
+              <span className={`text-[10px] font-semibold tracking-wider px-1.5 py-0.5 rounded-sm shrink-0 ${typeClass(item)}`}>
+                {typeLabel(item)}
               </span>
               <p className="flex-1 min-w-0 truncate text-sm">
                 <span className="text-white/70 font-medium">{item.title}</span>
                 {item.subtitle && <span className="text-gray-600"> — {item.subtitle}</span>}
               </p>
-              <span className="text-xs text-gray-500 ml-auto shrink-0">{formatDate(item.airDate)}</span>
+              <span className="text-xs text-gray-500 ml-auto shrink-0">{dateLabel(item)}</span>
             </div>
           ))}
         </div>

@@ -41,5 +41,7 @@ export interface UpcomingItem {
   subtitle?: string;
   airDate?: string;
   thumb: string;
-  type: 'movie' | 'episode';
+  type: 'movie' | 'episode' | 'show';
+  source?: 'seerr';
+  statusLabel?: string;
 }

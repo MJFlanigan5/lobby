@@ -65,6 +65,8 @@ Credential changes (Plex token, Jellyfin API key, etc.) apply immediately after 
 | `SONARR_API_KEY` | Sonarr API key — Settings → General (optional) |
 | `RADARR_URL` | Radarr server URL (optional) |
 | `RADARR_API_KEY` | Radarr API key — Settings → General (optional) |
+| `SEERR_URL` | Seerr/Overseerr URL — open requests (pending, approved, downloading) appear in Coming Soon (optional) |
+| `SEERR_API_KEY` | Seerr API key — Settings → General (optional) |
 | `GOVEE_IP` | IP address of the Govee light (optional) |
 | `GOVEE_DEVICE_ID` | Govee device ID, format `AA:BB:CC:DD:EE:FF:GG:HH` (optional) |
 | `HA_URL` | Home Assistant URL, e.g. `http://homeassistant.local:8123` (optional) |
