@@ -46,10 +46,17 @@ export default function ComingSoon({ displayConfig }: { displayConfig?: DisplayC
   // full list so a later item backfills the slot instead of leaving an empty card.
   const validItems = items.filter((item) => item.thumb && !brokenThumbs.has(item.thumb));
   if (validItems.length === 0) return <Ambient displayConfig={displayConfig} />;
-  const hero = validItems.slice(0, 6);
+  // Requests have no air date and sort last, so reserve up to 4 list slots for them
+  // instead of letting a long calendar push them off screen.
+  const allRequested = validItems.filter((i) => i.source === 'seerr');
+  const calendar = validItems.filter((i) => i.source !== 'seerr');
+  // With nothing on the calendar, requests take the hero row.
+  const sections = calendar.length ? calendar : allRequested;
+  const requested = calendar.length ? allRequested.slice(0, 4) : [];
+  const hero = sections.slice(0, 6);
   // Rough estimate for a 1080p-ish display — not measured against real rendered
   // height, so this errs conservative rather than risking clipped rows at the bottom.
-  const rest = validItems.slice(6, 6 + 8);
+  const rest = [...sections.slice(6, 6 + 8 - requested.length), ...requested];
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] overflow-hidden flex flex-col p-8">
