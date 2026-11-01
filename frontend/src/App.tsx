@@ -31,8 +31,9 @@ export default function App() {
   const urlPage = params.get('page');
   const isPortrait = urlMode === 'portrait';
 
-  // Server-pushed mode takes priority over URL param
-  const activeMode = serverMode ?? urlMode;
+  // Server-pushed mode takes priority over URL param, except ?mode=auto, which
+  // pins this screen to the Now Playing card regardless of the global mode
+  const activeMode = urlMode === 'auto' ? 'auto' : (serverMode ?? urlMode);
 
   useEffect(() => {
     if (isPortrait) {
