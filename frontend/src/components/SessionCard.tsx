@@ -1,4 +1,5 @@
 import type { Session } from '../types';
+import { timeLeft } from '../timeLeft';
 
 type CardSize = 'full' | 'half' | 'quarter';
 
@@ -123,7 +124,7 @@ export default function SessionCard({ session, size }: SessionCardProps) {
             </div>
             {session.type !== 'track' && session.state === 'playing' && (
               <p className="mt-1.5 text-xs text-white/30 text-right tabular-nums">
-                Ends at {new Date(Date.now() + Math.max(0, session.duration - session.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                {timeLeft(session.duration, session.viewOffset)} · Ends at {new Date(Date.now() + Math.max(0, session.duration - session.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
               </p>
             )}
           </>

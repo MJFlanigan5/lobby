@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { timeLeft } from '../timeLeft';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import { useLibrary } from '../hooks/useLibrary';
 import { useSessions } from '../hooks/useSessions';
@@ -130,7 +131,7 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
                   </div>
                   {activeVideoSession.state === 'playing' && (
                     <p className="mt-1 text-[10px] text-white/25 text-right tabular-nums tracking-wider">
-                      ends {new Date(Date.now() + Math.max(0, activeVideoSession.duration - activeVideoSession.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      {timeLeft(activeVideoSession.duration, activeVideoSession.viewOffset)} · ends {new Date(Date.now() + Math.max(0, activeVideoSession.duration - activeVideoSession.viewOffset)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                     </p>
                   )}
                 </div>
