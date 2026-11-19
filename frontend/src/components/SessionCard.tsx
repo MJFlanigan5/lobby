@@ -62,7 +62,11 @@ export default function SessionCard({ session, size }: SessionCardProps) {
             {session.resolution}
           </span>
         )}
-        {session.atmos && (
+        {session.soundbarFormat ? (
+          <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-black/50 text-white/80">
+            {session.soundbarFormat.toUpperCase()}
+          </span>
+        ) : session.atmos && (
           <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-black/50 text-white/80">
             ATMOS
           </span>

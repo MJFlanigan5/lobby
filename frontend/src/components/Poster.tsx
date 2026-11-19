@@ -154,7 +154,11 @@ export default function Poster({ displayConfig }: { displayConfig?: DisplayConfi
                     {activeVideoSession.resolution}
                   </span>
                 )}
-                {activeVideoSession.atmos && (
+                {activeVideoSession.soundbarFormat ? (
+                  <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
+                    {activeVideoSession.soundbarFormat.toUpperCase()}
+                  </span>
+                ) : activeVideoSession.atmos && (
                   <span className="text-xs font-semibold tracking-widest bg-white/10 text-white/50 px-2 py-0.5 rounded-sm">
                     ATMOS
                   </span>

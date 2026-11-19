@@ -17,6 +17,7 @@ export interface Session {
   player: string;
   resolution?: string | null;
   atmos?: boolean;
+  soundbarFormat?: string | null;
   contentRating?: string | null;
 }
 

@@ -67,12 +67,44 @@ let wakeTask = null;
 const app = express();
 app.use(express.json());
 
+// What the living room Sonos is actually receiving (Mike 2026-11-18), read from
+// HA's Sonos sensor. Only shown while the living room Apple TV is playing or
+// paused, so it isn't pinned to a session on another TV.
+const SOUNDBAR_FORMAT_ENTITY = 'sensor.living_room_living_room_audio_input_format';
+const LIVING_ROOM_PLAYER_ENTITY = 'media_player.living_room_2';
+
+async function getSoundbarFormat() {
+  const { HA_URL, HA_TOKEN } = getConfig();
+  if (!HA_URL || !HA_TOKEN) return null;
+  const base = HA_URL.replace(/\/$/, '');
+  const get = async (id) => {
+    const res = await fetch(`${base}/api/states/${id}`, {
+      headers: { Authorization: `Bearer ${HA_TOKEN}` },
+      signal: AbortSignal.timeout(3000),
+    });
+    return res.ok ? (await res.json()).state : null;
+  };
+  try {
+    const [format, player] = await Promise.all([get(SOUNDBAR_FORMAT_ENTITY), get(LIVING_ROOM_PLAYER_ENTITY)]);
+    if (!['playing', 'paused'].includes(player)) return null;
+    if (!format || ['unknown', 'unavailable', 'No audio'].includes(format)) return null;
+    return format.replace(/\s*\(.*\)\s*$/, '');
+  } catch {
+    return null;
+  }
+}
+
 async function getCurrentSessions() {
-  const [plexSessions, jfSessions] = await Promise.all([
+  const [plexSessions, jfSessions, soundbarFormat] = await Promise.all([
     plex.getSessions().catch(() => []),
     jellyfin.getSessions().catch(() => []),
+    getSoundbarFormat(),
   ]);
-  return [...plexSessions, ...jfSessions];
+  const sessions = [...plexSessions, ...jfSessions];
+  if (soundbarFormat) {
+    for (const s of sessions) if (s.type !== 'track') s.soundbarFormat = soundbarFormat;
+  }
+  return sessions;
 }
 
 // API routes
