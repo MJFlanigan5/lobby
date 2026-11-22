@@ -1,6 +1,6 @@
 export interface Session {
   id: string;
-  type: 'movie' | 'episode' | 'track';
+  type: 'movie' | 'episode' | 'track' | 'game';
   ratingKey?: string;
   title: string;
   subtitle: string;

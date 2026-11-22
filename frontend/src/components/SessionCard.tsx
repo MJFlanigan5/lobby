@@ -48,15 +48,21 @@ export default function SessionCard({ session, size }: SessionCardProps) {
 
       {/* Quality / spec badges — top left */}
       <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 flex-wrap">
-        <span
-          className={`text-xs font-semibold tracking-widest px-2 py-1 rounded-sm ${
-            session.quality === 'direct'
-              ? 'bg-green-900/70 text-green-300'
-              : 'bg-amber-900/70 text-amber-300'
-          }`}
-        >
-          {session.quality === 'direct' ? 'DIRECT' : 'TRANSCODE'}
-        </span>
+        {session.type === 'game' ? (
+          <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-green-900/70 text-green-300">
+            XBOX
+          </span>
+        ) : (
+          <span
+            className={`text-xs font-semibold tracking-widest px-2 py-1 rounded-sm ${
+              session.quality === 'direct'
+                ? 'bg-green-900/70 text-green-300'
+                : 'bg-amber-900/70 text-amber-300'
+            }`}
+          >
+            {session.quality === 'direct' ? 'DIRECT' : 'TRANSCODE'}
+          </span>
+        )}
         {session.resolution && (
           <span className="text-xs font-semibold tracking-widest px-2 py-1 rounded-sm bg-black/50 text-white/80">
             {session.resolution}
@@ -84,7 +90,7 @@ export default function SessionCard({ session, size }: SessionCardProps) {
       {useBackdrop && size === 'full' && session.thumb && (
         <div
           className="absolute bottom-5 left-5 z-20 rounded-sm overflow-hidden shadow-lg"
-          style={{ width: 72, aspectRatio: '2/3' }}
+          style={{ width: 72, aspectRatio: session.type === 'game' ? '3/4' : '2/3' }}
         >
           <img
             src={plexUrl(session.thumb)}

@@ -11,6 +11,7 @@ import { HomeAssistantLightSync } from './src/haLight.js';
 import { HueSync } from './src/hue.js';
 import { LifxSync } from './src/lifx.js';
 import { SonosDuck } from './src/sonos.js';
+import { getXboxSessions, proxyXboxImage } from './src/xbox.js';
 import { extractDominantColor } from './src/colors.js';
 import { getConfig, saveConfig } from './src/config.js';
 import cron from 'node-cron';
@@ -95,14 +96,15 @@ async function getSoundbarFormat() {
 }
 
 async function getCurrentSessions() {
-  const [plexSessions, jfSessions, soundbarFormat] = await Promise.all([
+  const [plexSessions, jfSessions, xboxSessions, soundbarFormat] = await Promise.all([
     plex.getSessions().catch(() => []),
     jellyfin.getSessions().catch(() => []),
+    getXboxSessions(),
     getSoundbarFormat(),
   ]);
-  const sessions = [...plexSessions, ...jfSessions];
+  const sessions = [...plexSessions, ...jfSessions, ...xboxSessions];
   if (soundbarFormat) {
-    for (const s of sessions) if (s.type !== 'track') s.soundbarFormat = soundbarFormat;
+    for (const s of sessions) if (s.type !== 'track' && s.type !== 'game') s.soundbarFormat = soundbarFormat;
   }
   return sessions;
 }
@@ -115,6 +117,13 @@ app.use('/api/poster', posterRoute(plex));
 app.use('/api/jfimage', jellyfinImageRoute(jellyfin));
 app.use('/api/weather', weatherRoute());
 app.use('/api/theme', themeRoute(plex));
+app.get('/api/haimage', async (req, res) => {
+  const result = await proxyXboxImage(req.query.entity);
+  if (!result) return res.status(404).json({ error: 'Image not found' });
+  res.set('Content-Type', result.contentType);
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.send(result.buffer);
+});
 
 // Called by the display itself when theme music starts/stops — ducks or
 // restores Sonos volume so it doesn't clash with what's on the speakers.
@@ -454,6 +463,9 @@ const wss = new WebSocketServer({ server, path: '/ws' });
 
 function resolveThumbImage(thumb) {
   if (!thumb) return Promise.resolve(null);
+  if (thumb.startsWith('/api/haimage')) {
+    return proxyXboxImage(new URLSearchParams(thumb.split('?')[1]).get('entity'));
+  }
   if (thumb.startsWith('/api/jfimage')) {
     const params = new URLSearchParams(thumb.split('?')[1]);
     return jellyfin.proxyImage(params.get('id'), params.get('type') || 'Primary');
