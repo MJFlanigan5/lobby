@@ -193,9 +193,12 @@ export class Plex {
     if (!this.baseUrl || !this.token) return null;
     try {
       const url = `${this.baseUrl}${thumbPath}?X-Plex-Token=${this.token}&width=1000&quality=90`;
-      const res = await fetch(url);
+      const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
       if (!res.ok) return null;
+      // Artwork is well under 10 MB; refuse anything bigger instead of buffering it.
+      if (Number(res.headers.get('content-length')) > 10 * 1024 * 1024) return null;
       const buffer = Buffer.from(await res.arrayBuffer());
+      if (buffer.length > 10 * 1024 * 1024) return null;
       const contentType = res.headers.get('content-type') || 'image/jpeg';
       return { buffer, contentType };
     } catch {

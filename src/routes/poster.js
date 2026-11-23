@@ -5,7 +5,10 @@ export default function posterRoute(plex) {
 
   router.get('/', async (req, res) => {
     const thumbPath = req.query.path;
-    if (!thumbPath || !thumbPath.startsWith('/')) {
+    // Only Plex artwork paths: anything else would be fetched with the Plex
+    // token for whoever asked (account data, whole movie files). Also rejects
+    // ?path=a&path=b, which arrives as an array and used to crash the server.
+    if (typeof thumbPath !== 'string' || !/^\/library\/(metadata|collections)\/\d+\/(thumb|art|clearLogo|banner|composite)(\/\d+)?$/.test(thumbPath)) {
       return res.status(400).json({ error: 'Missing or invalid path' });
     }
 

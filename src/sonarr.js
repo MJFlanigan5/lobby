@@ -5,7 +5,7 @@ export async function getSonarrUpcoming() {
   if (!url || !key) return [];
 
   try {
-    const start = new Date().toISOString().split('T')[0];
+    const start = new Date(Date.now() - 86400_000).toISOString().split('T')[0]; // yesterday (UTC): after 7 pm ET the UTC date is already tomorrow
     const end = new Date(Date.now() + 14 * 86400_000).toISOString().split('T')[0];
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10_000);

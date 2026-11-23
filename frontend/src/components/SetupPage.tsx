@@ -402,7 +402,7 @@ export default function SetupPage({ firstRun = false }: { firstRun?: boolean }) 
     setSaveError('');
     setGeoError('');
     try {
-      const SECRETS = new Set(['LOBBY_PIN', 'PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY']);
+      const SECRETS = new Set(['LOBBY_PIN', 'PLEX_TOKEN', 'JELLYFIN_API_KEY', 'SONARR_API_KEY', 'RADARR_API_KEY', 'HA_TOKEN', 'HUE_USERNAME', 'LIFX_TOKEN']);
       const payload: Record<string, string> = {};
       for (const [k, v] of Object.entries(form)) {
         if (SECRETS.has(k) && !v && !toRemove.has(k)) continue;

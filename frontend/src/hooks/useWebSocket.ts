@@ -30,6 +30,7 @@ export function useWebSocket(): UseWebSocketResult {
   const [connected, setConnected] = useState(false);
   const [displayConfig, setDisplayConfig] = useState<DisplayConfig | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
+  const lastMsgRef = useRef(Date.now());
   const backoffRef = useRef(1000);
   const mountedRef = useRef(true);
 
@@ -43,12 +44,14 @@ export function useWebSocket(): UseWebSocketResult {
 
     ws.onopen = () => {
       if (!mountedRef.current) return;
+      lastMsgRef.current = Date.now();
       setConnected(true);
       backoffRef.current = 1000;
     };
 
     ws.onmessage = (event) => {
       if (!mountedRef.current) return;
+      lastMsgRef.current = Date.now();
       try {
         const msg: WsMessage = JSON.parse(event.data);
         if (msg.type === 'sessions') setSessions(msg.data);
@@ -75,8 +78,20 @@ export function useWebSocket(): UseWebSocketResult {
   useEffect(() => {
     mountedRef.current = true;
     connect();
+    // The server sends sessions every 10 s. After a Wi-Fi blip the socket can
+    // stay half-open with no close event, so if nothing arrives for 35 s,
+    // drop it and connect again instead of showing stale Now Playing.
+    const stale = setInterval(() => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== WebSocket.OPEN || Date.now() - lastMsgRef.current < 35_000) return;
+      ws.onclose = null;
+      ws.close();
+      setConnected(false);
+      connect();
+    }, 10_000);
     return () => {
       mountedRef.current = false;
+      clearInterval(stale);
       wsRef.current?.close();
     };
   }, [connect]);

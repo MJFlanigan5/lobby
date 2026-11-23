@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import type { UpcomingItem } from '../types';
 import type { DisplayConfig } from '../hooks/useWebSocket';
 import Ambient from './Ambient';
+import { parseReleaseDate } from './clockUtils';
 
 function formatDate(dateStr?: string) {
   if (!dateStr) return 'TBD';
-  const d = new Date(dateStr);
+  const d = parseReleaseDate(dateStr);
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 

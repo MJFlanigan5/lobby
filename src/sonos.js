@@ -66,20 +66,32 @@ export class SonosDuck {
 
   async duck() {
     if (!this.configured) return;
-    // Already ducked — don't re-fetch and overwrite the saved original with
-    // the current (already-ducked) volume if this fires again before restore().
-    if (this._savedVolume !== null) return;
-    const { SONOS_DUCK_VOLUME } = getConfig();
-    const target = parseInt(SONOS_DUCK_VOLUME, 10) || 15;
-    const current = await this.getVolume();
-    if (current === null) return; // couldn't reach the speaker — don't guess a "restore" value
-    this._savedVolume = current;
-    if (current > target) await this.setVolume(target);
+    // Already ducked (or ducking) — don't re-fetch and overwrite the saved
+    // original with the current (already-ducked) volume.
+    if (this._savedVolume !== null || this._ducking) return this._ducking;
+    this._ducking = (async () => {
+      const { SONOS_DUCK_VOLUME } = getConfig();
+      const target = parseInt(SONOS_DUCK_VOLUME, 10) || 15;
+      const current = await this.getVolume();
+      if (current === null) return; // couldn't reach the speaker — don't guess a "restore" value
+      this._savedVolume = current;
+      if (current > target) await this.setVolume(target);
+      // If the TV reloads or drops off Wi-Fi mid-theme, "stopped" never comes;
+      // put the volume back on our own after 5 minutes (2026-11-23).
+      clearTimeout(this._autoRestore);
+      this._autoRestore = setTimeout(() => this.restore().catch(() => {}), 5 * 60_000);
+    })();
+    try { await this._ducking; } finally { this._ducking = null; }
   }
 
   async restore() {
+    // A restore that arrives while duck() is still running waits for it,
+    // instead of finding nothing saved yet and leaving the speaker ducked.
+    if (this._ducking) await this._ducking.catch(() => {});
+    clearTimeout(this._autoRestore);
     if (!this.configured || this._savedVolume === null) return;
-    await this.setVolume(this._savedVolume);
+    const v = this._savedVolume;
     this._savedVolume = null;
+    await this.setVolume(v);
   }
 }

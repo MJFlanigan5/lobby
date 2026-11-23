@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 
+// Release dates from Radarr/Seerr are calendar days ("2026-12-11" or midnight
+// UTC). Parsed as UTC they showed a day early in New York, so read them as a
+// local date; real times (Sonarr airDateUtc) parse as usual.
+export function parseReleaseDate(dateStr: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})(T00:00:00(\.0+)?Z)?$/.exec(dateStr);
+  return m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(dateStr);
+}
+
 export function formatAirDate(dateStr: string) {
-  const d = new Date(dateStr);
+  const d = parseReleaseDate(dateStr);
   if (isNaN(d.getTime())) return '';
   const diffDays = Math.round((d.getTime() - Date.now()) / 86_400_000);
   if (diffDays <= 0) return d.toLocaleDateString([], { month: 'short', day: 'numeric' });

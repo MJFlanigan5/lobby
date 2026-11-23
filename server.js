@@ -372,10 +372,19 @@ app.post('/api/config', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Connection tests use the saved key only against the saved address; a new
+// address needs its key typed in too, so a test can't send a stored key to
+// any host someone types (2026-11-23 review).
+function testCreds(body, c, urlKey, secretKey) {
+  const url = body[urlKey] || c[urlKey];
+  const sameHost = !body[urlKey] || body[urlKey] === c[urlKey];
+  const key = body[secretKey] || (sameHost ? c[secretKey] : '');
+  return { url, key };
+}
+
 app.post('/api/config/test', requireAuth, async (req, res) => {
   const c = getConfig();
-  const url = req.body.PLEX_URL || c.PLEX_URL;
-  const token = req.body.PLEX_TOKEN || c.PLEX_TOKEN;
+  const { url, key: token } = testCreds(req.body, c, 'PLEX_URL', 'PLEX_TOKEN');
   if (!url || !token) {
     return res.status(400).json({ error: 'PLEX_URL and PLEX_TOKEN required' });
   }
@@ -390,8 +399,7 @@ app.post('/api/config/test', requireAuth, async (req, res) => {
 
 app.post('/api/config/test/sonarr', requireAuth, async (req, res) => {
   const c = getConfig();
-  const url = req.body.SONARR_URL || c.SONARR_URL;
-  const key = req.body.SONARR_API_KEY || c.SONARR_API_KEY;
+  const { url, key } = testCreds(req.body, c, 'SONARR_URL', 'SONARR_API_KEY');
   if (!url || !key) {
     return res.status(400).json({ error: 'SONARR_URL and SONARR_API_KEY required' });
   }
@@ -413,8 +421,7 @@ app.post('/api/config/test/sonarr', requireAuth, async (req, res) => {
 
 app.post('/api/config/test/radarr', requireAuth, async (req, res) => {
   const c = getConfig();
-  const url = req.body.RADARR_URL || c.RADARR_URL;
-  const key = req.body.RADARR_API_KEY || c.RADARR_API_KEY;
+  const { url, key } = testCreds(req.body, c, 'RADARR_URL', 'RADARR_API_KEY');
   if (!url || !key) {
     return res.status(400).json({ error: 'RADARR_URL and RADARR_API_KEY required' });
   }
@@ -436,8 +443,7 @@ app.post('/api/config/test/radarr', requireAuth, async (req, res) => {
 
 app.post('/api/config/test/jellyfin', requireAuth, async (req, res) => {
   const c = getConfig();
-  const url = req.body.JELLYFIN_URL || c.JELLYFIN_URL;
-  const key = req.body.JELLYFIN_API_KEY || c.JELLYFIN_API_KEY;
+  const { url, key } = testCreds(req.body, c, 'JELLYFIN_URL', 'JELLYFIN_API_KEY');
   if (!url || !key) {
     return res.status(400).json({ error: 'JELLYFIN_URL and JELLYFIN_API_KEY required' });
   }
@@ -457,6 +463,9 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(distPath, 'index.html'));
 });
 
+// Log instead of exiting: one bad request must not take the kitchen display down.
+process.on('unhandledRejection', (err) => log.error('Unhandled rejection:', err?.message || err));
+
 // HTTP + WebSocket server
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -473,17 +482,30 @@ function resolveThumbImage(thumb) {
   return plex.proxyImage(thumb);
 }
 
+// Drop sockets that stop answering pings (a TV that lost Wi-Fi leaves a
+// half-open socket that never closes on its own).
+setInterval(() => {
+  for (const ws of wss.clients) {
+    if (ws.isAlive === false) { ws.terminate(); continue; }
+    ws.isAlive = false;
+    ws.ping();
+  }
+}, 30_000).unref();
+
 wss.on('connection', async (ws) => {
   log.info('WebSocket client connected');
+  // Listeners first: a bad frame during the session fetch below used to be an
+  // 'error' with no listener, which crashes the process.
+  ws.isAlive = true;
+  ws.on('pong', () => { ws.isAlive = true; });
+  ws.on('error', (err) => log.error('WebSocket error:', err.message));
+  ws.on('close', () => log.info('WebSocket client disconnected'));
 
   ws.send(JSON.stringify({ type: 'mode', data: currentMode }));
   ws.send(JSON.stringify({ type: 'config', data: getDisplayConfig() }));
 
   const sessions = await getCurrentSessions();
-  ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
-
-  ws.on('error', (err) => log.error('WebSocket error:', err.message));
-  ws.on('close', () => log.info('WebSocket client disconnected'));
+  if (ws.readyState === 1) ws.send(JSON.stringify({ type: 'sessions', data: sessions }));
 });
 
 // Push sessions to all clients every 10s
